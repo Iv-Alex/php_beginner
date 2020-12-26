@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="search-form-container">
+        <h3>Поиск</h3>
+        <div id="shop-rating-container">
+            <fieldset class="params">
+                <legend class="group-header">Рейтинг магазина</legend>
+                <ul class="radio-group">
+                    <li class="radio-item-container">
+                        <label for="shop-rating-2" class="radio-item">
+                            <input type="radio" name="shop-rating" class="radio-item-button" id="shop-rating-2">
+                            <div class="radio-item-caption">
+                                От
+                                <div class="stars"></div>
+                            </div>
+                        </label>
+                    </li>
+                    <li class="radio-item-container">
+                        <label for="shop-rating-3" class="radio-item">
+                            <input type="radio" name="shop-rating" class="radio-item-button" id="shop-rating-3">
+                            <div class="radio-item-caption">
+                                От
+                                <div class="stars"></div>
+                            </div>
+                        </label>
+                    </li>
+                    <li class="radio-item-container">
+                        <label for="shop-rating-4" class="radio-item">
+                            <input type="radio" name="shop-rating" class="radio-item-button" id="shop-rating-4">
+                            <div class="radio-item-caption">
+                                От
+                                <div class="stars"></div>
+                            </div>
+                        </label>
+                    </li>
+                    <li class="radio-item-container">
+                        <label for="shop-rating-any" class="radio-item">
+                            <input type="radio" name="shop-rating" class="radio-item-button" id="shop-rating-any">
+                            <div class="radio-item-caption">
+                                Любой
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+            </fieldset>
+        </div>
+        <div id="price">
+            <fieldset class="params">
+                <legend class="group-header">Цена, ₽</legend>
+                <div class="price-container">
+                    <div class="num-input-container">
+                        <label for="from-price" class="num-caption">от</label>
+                        <input type="text" name="from-price" id="from-price" placeholder="500" class="num-input">
+                    </div>
+                    <div class="num-input-container">
+                        <label for="from-price" class="num-caption">до</label>
+                        <input type="text" name="to-price" id="to-price" placeholder="100500" class="num-input">
+                        </label>
+                    </div>
+                </div>
+                <ul class="check-group">
+                    <li class="check-item-container">
+                        <label for="delivery-inc" class="check-item">
+                            <input type="checkbox" name="delivery-inc" class="check-item-button" id="delivery-inc">
+                            <div class="check-item-caption">
+                                цена с учётом доставки
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+            </fieldset>
+        </div>
+        <div id="insell-container">
+            <fieldset class="params">
+                <ul class="check-group">
+                    <li class="check-item-container">
+                        <label for="insell" class="check-item">
+                            <input type="checkbox" name="insell" class="check-item-button" id="insell">
+                            <div class="check-item-caption bold">
+                                В продаже
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+            </fieldset>
+        </div>
+        <div id="marketpay-container">
+            <fieldset class="params">
+                <ul class="check-group">
+                    <li class="check-item-container">
+                        <label for="marketpay" class="check-item">
+                            <input type="checkbox" name="marketpay" class="check-item-button" id="marketpay">
+                            <div class="check-item-caption bold">
+                                Оплата на маркете
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+                <p>
+                    Вы получите товар<br>или вам вернут деньги<br>
+                    <a href="#">Подробнее</a>
+                </p>
+            </fieldset>
+        </div>
+        <div id="manufacturer-container">
+            <fieldset class="params">
+                <legend class="group-header">Производитель</legend>
+                <ul class="check-group">
+                    <li class="check-item-container">
+                        <label for="man-apple" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-apple">
+                            <div class="check-item-caption">
+                                Apple
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-asus" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-asus">
+                            <div class="check-item-caption">
+                                ASUS
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-bq" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-bq">
+                            <div class="check-item-caption">
+                                BQ
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-htc" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-htc">
+                            <div class="check-item-caption">
+                                HTC
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-huawei" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-huawei">
+                            <div class="check-item-caption">
+                                Huawei
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-lg" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-lg">
+                            <div class="check-item-caption">
+                                LG
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-meizu" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-meizu">
+                            <div class="check-item-caption">
+                                Meizu
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-nokia" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-nokia">
+                            <div class="check-item-caption">
+                                Nokia
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-oneplus" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-oneplus">
+                            <div class="check-item-caption">
+                                OnePlus
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-samsung" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-samsung">
+                            <div class="check-item-caption">
+                                Samsung
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-sony" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-sony">
+                            <div class="check-item-caption">
+                                Sony
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="man-xiaomi" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="man-xiaomi">
+                            <div class="check-item-caption">
+                                Xiaomi
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+            </fieldset>
+        </div>
+        <div id="size-container">
+            <fieldset class="params">
+                <legend class="group-header">Диагональ экрана</legend>
+                <ul class="check-group">
+                    <li class="check-item-container">
+                        <label for="size-u2" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="size-u2" disabled>
+                            <div class="check-item-caption">
+                                до 2&prime;&prime;
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="size-2" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="size-2">
+                            <div class="check-item-caption">
+                                2,1&prime;&prime;-2,9&prime;&prime;
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="size-3" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="size-3">
+                            <div class="check-item-caption">
+                                3&prime;&prime;-3&prime;&prime;
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="size-4" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="size-4">
+                            <div class="check-item-caption">
+                                4,1&prime;&prime;-4,9&prime;&prime;
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="size-5" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="size-5">
+                            <div class="check-item-caption">
+                                5&prime;&prime;-5,4&prime;&prime;
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="size-o5" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="size-o5">
+                            <div class="check-item-caption">
+                                5,5&prime;&prime; и выше
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+            </fieldset>
+        </div>
+        <div id="resolution-container">
+            <fieldset class="params">
+                <legend class="group-header">Разрешение</legend>
+                <ul class="check-group">
+                    <li class="check-item-container">
+                        <label for="resolution-1280" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="resolution-1280">
+                            <div class="check-item-caption">
+                                1280x720 (HD)
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="resolution-1920" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="resolution-1920">
+                            <div class="check-item-caption">
+                                1920x1080 (Full HD)
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="resolution-320" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="resolution-320"
+                                disabled>
+                            <div class="check-item-caption">
+                                320x240
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="resolution-854" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="resolution-854">
+                            <div class="check-item-caption">
+                                854x480
+                            </div>
+                        </label>
+                    </li>
+                    <li class="check-item-container">
+                        <label for="resolution-800" class="check-item">
+                            <input type="checkbox" name="manufacturer" class="check-item-button" id="resolution-800">
+                            <div class="check-item-caption">
+                                800x480
+                            </div>
+                        </label>
+                    </li>
+                </ul>
+            </fieldset>
+
+        </div>
+
+        <button class="search-form-submit">Применить</button>
+
+        <div class="all-search-filters">
+            <a href="#">Перейти ко всем фильтрам</a>
+        </div>
+    </div>
+</body>
+
+</html>

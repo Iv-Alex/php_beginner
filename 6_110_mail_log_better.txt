@@ -1,0 +1,79 @@
+# 2.9
+echo ini_get ( 'mail.add_x_header' ) . '<br>';
+echo mail('test-8qxwz2jda@srv1.mail-tester.com', 'Тестовое письмо', 'Приветствие. Прооверка письма на спам') . '<br>';
+
+# 4.7
+# работает добавление в директорию скрипта .htacess и утановки
+# php_flag mail.add_x_header Off
+echo ini_get ( 'mail.add_x_header' ) . '<br>';
+echo mail('test-8qxwz2jda@srv1.mail-tester.com', 'Тестовое письмо', 'Приветствие. Прооверка письма на спам') . '<br>';
+
+Received: by mail-tester.com (Postfix, from userid 500)
+	id 2D233A7AEB; Sat,  9 May 2020 08:47:29 +0200 (CEST)
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on mail-tester.com
+X-Spam-Level: ****
+X-Spam-Status: No/4.3/5.0
+X-Spam-Test-Scores: MISSING_MID=0.14,PP_MIME_FAKE_ASCII_TEXT=0.999,
+	PYZOR_CHECK=1.985,SPF_PASS=-0.001,SUBJECT_NEEDS_ENCODING=0.1,
+	SUBJ_ILLEGAL_CHARS=1.105
+X-Spam-Last-External-IP: 185.78.30.24
+X-Spam-Last-External-HELO: mail4.smtp.beget.ru
+X-Spam-Last-External-rDNS: mail4.smtp.beget.ru
+X-Spam-Date-of-Scan: Sat, 09 May 2020 08:47:29 +0200
+X-Spam-Report: 
+	* -0.0 SPF_PASS SPF: sender matches SPF record
+	*  1.0 PP_MIME_FAKE_ASCII_TEXT BODY: MIME text/plain claims to be
+	*      ASCII but isn't
+	*  2.0 PYZOR_CHECK Listed in Pyzor
+	*      (https://pyzor.readthedocs.io/en/latest/)
+	*  0.1 MISSING_MID Missing Message-Id: header
+	*  1.1 SUBJ_ILLEGAL_CHARS Subject: has too many raw illegal characters
+	*  0.1 SUBJECT_NEEDS_ENCODING Subject is encoded but does not specify
+	*      the encoding
+Received-SPF: Pass (sender SPF authorized) identity=mailfrom; client-ip=185.78.30.24; helo=mail4.smtp.beget.ru; envelope-from=temp@logycon.ru; receiver=test-8qxwz2jda@srv1.mail-tester.com 
+DMARC-Filter: OpenDMARC Filter v1.3.1 mail-tester.com 73BB1A7AD1
+Authentication-Results: mail-tester.com; dmarc=none header.from=logycon.ru
+Received: from mail4.smtp.beget.ru (mail4.smtp.beget.ru [185.78.30.24])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by mail-tester.com (Postfix) with ESMTPS id 73BB1A7AD1
+	for <test-8qxwz2jda@srv1.mail-tester.com>; Sat,  9 May 2020 08:47:27 +0200 (CEST)
+Received: from [178.234.239.50] (port=56268 helo=OpenServer)
+	by smtp.beget.com with esmtpa (Exim 4.90.1-beget)
+	(envelope-from <temp@logycon.ru>)
+	id 1jXJGf-0004M6-IL
+	for test-8qxwz2jda@srv1.mail-tester.com; Sat, 09 May 2020 09:47:25 +0300
+Date: Sat, 9 May 2020 09:47:27 +0300
+From: <temp@logycon.ru>
+To: test-8qxwz2jda@srv1.mail-tester.com
+Subject: Тестовое письмо
+Message-Id: <20200509064729.2D233A7AEB@mail-tester.com>
+
+Приветствие. Прооверка письма на спам
+
+# 6.9
+error_reporting(E_ALL);
+header('Content-Type: text/html; charset=utf-8');
+# это не работает для удаления заголовка:
+# echo ini_set ( 'mail.add_x_header', '0' ) . '<br>';
+
+$headers = 'From: temp@logycon.ru'."\r\n"
+.'Content-Type: text/plain; charset=utf-8'."\r\n";
+# работает добавление в директорию скрипта .htacess и утановки
+# php_flag mail.add_x_header Off
+echo ini_get ( 'mail.add_x_header' ) . '<br>';
+
+echo mail('test-8qxwz2jda@srv1.mail-tester.com', 
+    '=?utf-8?B?'.base64_encode('О оздании проверочной системы').'?=',
+    '=?utf-8?B?'.base64_encode('Привет. Тут необходимо посмотреть проект, в нем есть какие-то
+    недостатки, но в целом он готов. Созвонимся.
+    --
+    С уважением, Петр Константинович.').'?=',
+    $headers) . '<br>';
+
+-0.14	MISSING_MID	Missing Message-Id: header
+-1.985	PYZOR_CHECK	Similar message reported on Pyzor (http://pyzor.org)
+https://pyzor.readthedocs.io/en/latest/
+Пожалуйста, проверьте реальное содержание, тестовые рассылки всегда будет помечен Pyzor
+Отрегулируйте ваше сообщение или запрос белый список (http://public.pyzor.org/whitelist/)
+
