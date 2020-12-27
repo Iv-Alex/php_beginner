@@ -4,6 +4,9 @@ header('Content-Type: text/html; charset=utf-8');
 
 $root_dir = './' . basename(__FILE__);
 
+//Будем использовать переменную сессии для капчи
+session_start();
+
 //Значения полей формы по умолчанию
 $tmp_name = '';
 $tmp_email = '';
@@ -12,6 +15,17 @@ $tmp_message = '';
 //вид страницы по умолчанию (варианты обработки страницы: default, err, sent, etc.)
 $form_skin = 'default';
 
+//Вопросы для капчи
+define('CAPCHA_QUERIES', [
+    ['Два минус один', '1'],
+    ['Пять плюс три', '8'],
+    ['Пять минус три', '2'],
+    ['Шесть плюс шесть', '12'],
+    ['Три тысячи пятьдесят два', '3052'],
+    ['Семьсот двенадцать', '712'],
+    ['Тридцать два плюс один', '33'],
+    ['Дюжина', '12']
+]);
 
 //Для обработки множества вариантов ошибок множества полей введем кодировку
 // - коды полей
@@ -19,12 +33,14 @@ $name_err = '1';
 $email_err = '2';
 $phone_err = '3';
 $message_err = '4';
+$capcha_err = '5';
 // - массив ошибок
 $err_codes = array(
     "01" => "Поле обязательно к заполнению",
     "02" => "Поле должно содержать только цифры",
     "03" => "E-mail адрес не корректен",
     "04" => "Не соответствует шаблону (проверьте количество символов)",
+    "05" => "Не правильно"
 );
 //Массив ошибок
 //заполняется [код_поля, код_ошибки]
@@ -46,12 +62,12 @@ function get_errors($err_codes, $errors, $field_code, $style = 'error')
 
 //обработка полей формы и попытка отправки
 if (isset($_POST['submit'])) {
-    if ($_POST['user_name'] !== '') {
+    if ($_POST['user_name'] != '') {
         $tmp_name = $_POST['user_name'];
     } else {
         $errors[] = [$name_err, '01'];
     }
-    if ($_POST['user_email'] !== '') {
+    if ($_POST['user_email'] != '') {
         $tmp_email = $_POST['user_email'];
         //проверяем количество и позицию @ в email
         if ((($a_pos = stripos($tmp_email, '@')) === false) ||
@@ -65,17 +81,22 @@ if (isset($_POST['submit'])) {
     } else {
         $errors[] = [$email_err, '01'];
     }
-    if ($_POST['user_phone'] !== '') {
+    if ($_POST['user_phone'] != '') {
         $tmp_phone = $_POST['user_phone'];
-        if ($tmp_phone !== '' . intval($tmp_phone)) $errors[] = [$phone_err, '02'];
-        if (strlen($tmp_phone) !== 10)          $errors[] = [$phone_err, '04'];
+        if ($tmp_phone != '' . intval($tmp_phone)) $errors[] = [$phone_err, '02'];
+        if (strlen($tmp_phone) != 10) $errors[] = [$phone_err, '04'];
     } else {
         $errors[] = [$phone_err, '01'];
     }
-    if ($_POST['user_message'] !== '') {
+    if ($_POST['user_message'] != '') {
         $tmp_message = $_POST['user_message'];
     } else {
         $errors[] = [$message_err, '01'];
+    }
+    if ($_POST['capcha'] != '') {
+        if (CAPCHA_QUERIES[$_SESSION['cur_capcha']][1] != $_POST['capcha']) $errors[] = [$capcha_err, '05'];;
+    } else {
+        $errors[] = [$capcha_err, '01'];
     }
     if (count($errors) == 0) {
         //если нет ошибок, отправка формы
@@ -89,6 +110,8 @@ if (isset($_POST['submit'])) {
                 'Сообщение: ' . $tmp_message,
             $headers
         );
+        //удаляем переменные сессии
+        unset($_SESSION['cur_capcha']);
         // вызов headers (ошибки/успешно)
         header('Location: ' . $root_dir . '?result=ok&name=' . base64_encode($tmp_name));
     } else {
@@ -98,6 +121,9 @@ if (isset($_POST['submit'])) {
 } else {
     //ничего не делаем
 }
+
+// Текущая капча, меняем после проверки формы
+$_SESSION['cur_capcha'] = rand(0, count(CAPCHA_QUERIES) - 1);
 
 //Проверка $_GET
 if ((isset($_GET['result'])) && (($_GET['result']) == 'ok')) {
@@ -160,6 +186,10 @@ if ((isset($_GET['result'])) && (($_GET['result']) == 'ok')) {
             padding: 1em 0 0 0;
         }
 
+        #my span {
+            display: block;
+        }
+
         .comment {
             margin: 1em 0 2em 0;
         }
@@ -168,8 +198,8 @@ if ((isset($_GET['result'])) && (($_GET['result']) == 'ok')) {
             color: red;
         }
 
-        span.error {
-            display: block;
+        .strong {
+            font-weight: bold;
         }
 
         div.message {
@@ -209,7 +239,7 @@ if ((isset($_GET['result'])) && (($_GET['result']) == 'ok')) {
     ?>
         <div class="message div-center">
             <div class="ok">
-                <?= (isset($_GET['name'])) ? base64_decode($_GET['name']) . ', ': '' ?>
+                <?= (isset($_GET['name'])) ? base64_decode($_GET['name']) . ', ' : '' ?>
                 Ваше сообщение успешно отправлено.
             </div>
             <div class="text-right">
@@ -240,6 +270,12 @@ if ((isset($_GET['result'])) && (($_GET['result']) == 'ok')) {
                 Сообщение *
                 <textarea name="user_message" id="user_message" cols="70" rows="6"><?= $tmp_message ?></textarea>
                 <?= ($form_skin == 'err') ? get_errors($err_codes, $errors, $message_err) : '' ?>
+            </label>
+            <label>
+                Для проверки, что вы не робот, введите цифрами число: *
+                <span class="strong"><?= CAPCHA_QUERIES[$_SESSION['cur_capcha']][0] ?></span>
+                <input name="capcha" id="capcha" title="CAPCHA">
+                <?= ($form_skin == 'err') ? get_errors($err_codes, $errors, $capcha_err) : '' ?>
             </label>
             <div class="comment">
                 Поля, отмеченные звездочкой (*), обязательны для заполнения
