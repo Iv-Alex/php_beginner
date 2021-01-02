@@ -103,7 +103,7 @@ define(
 );
 
 //массив для однотипного (версия через слеш) определения браузеров в порядке идентификации
-//[СтрокаПоиска, НаименованиеБраузера, УстаревшаяВерсия+1]
+//[СтрокаПоиска, НаименованиеБраузера, УстаревшаяВерсия+1/НеОпределятьВерсию(-1)]
 define(
     'BROWSERS',
     array(
@@ -112,6 +112,7 @@ define(
         ['OPR', 'Opera'],
         ['YaBrowser', 'Yandex Browser'],
         ['MSIE', 'Microsoft Internet Explorer', 10],
+        ['rv:11', 'Microsoft Internet Explorer 11', -1],
         ['Edge', 'Microsoft Edge'],
         ['Chrome', 'Google Chrome']
     )
@@ -125,37 +126,30 @@ function get_user_browser_info($http_user_agent)
     $user_browser_info = false;
     foreach (BROWSERS as $browser) {
         if (($start_pos = strpos($http_user_agent, $browser[0])) !== false) {
-            $version = substr(
-                $http_user_agent,
-                $start_pos += (strlen($browser[0]) + 1),
-                strpos($http_user_agent, '.', $start_pos) - $start_pos
-            );
-            if (isset($browser[2]) && (intval($version) < $browser[2])) {
-                $comment = 'У вас слишком старая версия. Обновитесь или установите Google Chrome актуальной версии';
+            $old_ver = isset($browser[2]) ? $browser[2] : 0;
+            $comment = null;
+            $version = '';
+            if ($old_ver >= 0) {
+                $version = substr(
+                    $http_user_agent,
+                    $start_pos += (strlen($browser[0]) + 1),
+                    strpos($http_user_agent, '.', $start_pos) - $start_pos
+                );
+                if (intval($version) < $old_ver) {
+                    $comment = 'У вас слишком старая версия. Обновитесь или установите Google Chrome актуальной версии';
+                } else {
+                    //ничего не делаем
+                }
             } else {
-                $comment = null;
+                //ничего не делаем
             }
             $user_browser_info = [$browser[1], $version, $comment];
             break;
+        } else {
+            //ничего не делаем
         }
     }
-// TODO
-    /* TODO
 
-    } elseif (($start_pos = strpos($http_user_agent, 'Trident')) !== false) {
-        $version = substr(
-            $http_user_agent,
-            $start_pos += 6,
-            strpos($http_user_agent, '.', $start_pos) - $start_pos
-        );
-        $user_browser_info = ['Microsoft Internet Explorer', $version];
-    } elseif (($start_pos = strpos($http_user_agent, '')) !== false) {
-        $user_browser_info = '';
-    } elseif (($start_pos = strpos($http_user_agent, '')) !== false) {
-    } else {
-        $user_browser_info = false;
-    }
-    */
     return $user_browser_info;
 }
 
