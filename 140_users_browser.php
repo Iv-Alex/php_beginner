@@ -103,7 +103,7 @@ define(
 );
 
 //массив для однотипного (версия через слеш) определения браузеров в порядке идентификации
-//[СтрокаПоиска, НаименованиеБраузера, УстаревшаяВерсия+1/НеОпределятьВерсию(-1)]
+//[СтрокаПоиска, НаименованиеБраузера, УстаревшаяВерсия+1/НеОпределятьВерсию(-1), ИдентификаторВерсии]
 define(
     'BROWSERS',
     array(
@@ -114,7 +114,9 @@ define(
         ['MSIE', 'Microsoft Internet Explorer', 10],
         ['rv:11', 'Microsoft Internet Explorer 11', -1],
         ['Edge', 'Microsoft Edge'],
-        ['Chrome', 'Google Chrome']
+        ['Chrome', 'Google Chrome'],
+        ['Safari', 'Safari', 0, 'Version'],
+        ['AppleWebKit', 'Webkit based browser', -1]
     )
 );
 
@@ -130,9 +132,15 @@ function get_user_browser_info($http_user_agent)
             $comment = null;
             $version = '';
             if ($old_ver >= 0) {
+                //если для версии используется отдельный идентификатор
+                if (isset($browser[3])) {
+                    $start_pos = strpos($http_user_agent, $browser[3]) + strlen($browser[3]) + 1;
+                } else {
+                    $start_pos += (strlen($browser[0]) + 1);
+                }
                 $version = substr(
                     $http_user_agent,
-                    $start_pos += (strlen($browser[0]) + 1),
+                    $start_pos,
                     strpos($http_user_agent, '.', $start_pos) - $start_pos
                 );
                 if (intval($version) < $old_ver) {
@@ -177,13 +185,19 @@ function get_user_browser_info($http_user_agent)
 
     <h3>Рабочий вариант</h3>
     <h5>HTTP_USER_AGENT = <?= $http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?></h5>
-    <h5>Информация о браузере:</h5>
     <h4><?= ((($user_br = get_user_browser_info($http_user_agent)) !== false) ? "у вас $user_br[0] $user_br[1]" : 'браузер не определен') ?></h4>
     <?= isset($user_br[2]) ? "<h5>$user_br[2]</h5>" : '' ?>
 
-    <h3>Тестовый вариант</h3>
+    <h3>Тестовый вариант 1</h3>
     <h5>test HTTP_USER_AGENT = <?= $http_user_agent = TEST_USER_AGENTS[rand(0, count(TEST_USER_AGENTS) - 1)] ?></h5>
-    <h5>Информация о браузере:</h5>
+    <h4><?= ((($user_br = get_user_browser_info($http_user_agent)) !== false) ? "у вас $user_br[0] $user_br[1]" : 'браузер не определен') ?></h4>
+    <?= isset($user_br[2]) ? "<h5>$user_br[2]</h5>" : '' ?>
+    <h3>Тестовый вариант 2</h3>
+    <h5>test HTTP_USER_AGENT = <?= $http_user_agent = TEST_USER_AGENTS[rand(0, count(TEST_USER_AGENTS) - 1)] ?></h5>
+    <h4><?= ((($user_br = get_user_browser_info($http_user_agent)) !== false) ? "у вас $user_br[0] $user_br[1]" : 'браузер не определен') ?></h4>
+    <?= isset($user_br[2]) ? "<h5>$user_br[2]</h5>" : '' ?>
+    <h3>Тестовый вариант 3</h3>
+    <h5>test HTTP_USER_AGENT = <?= $http_user_agent = TEST_USER_AGENTS[rand(0, count(TEST_USER_AGENTS) - 1)] ?></h5>
     <h4><?= ((($user_br = get_user_browser_info($http_user_agent)) !== false) ? "у вас $user_br[0] $user_br[1]" : 'браузер не определен') ?></h4>
     <?= isset($user_br[2]) ? "<h5>$user_br[2]</h5>" : '' ?>
 
