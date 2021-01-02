@@ -188,12 +188,6 @@ function get_user_browser_info($http_user_agent)
     <h4><?= ((($user_br = get_user_browser_info($http_user_agent)) !== false) ? "у вас $user_br[0] $user_br[1]" : 'браузер не определен') ?></h4>
     <?= isset($user_br[2]) ? "<h5>$user_br[2]</h5>" : '' ?>
 
-    <h3>Тестовый вариант</h3>
-    <h5>test HTTP_USER_AGENT = <?= $http_user_agent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/5.0)" ?></h5>
-    <h5>Информация о браузере:</h5>
-    <h4><?= ((($user_br = get_user_browser_info($http_user_agent)) !== false) ? "у вас $user_br[0] $user_br[1]" : 'браузер не определен') ?></h4>
-    <?= isset($user_br[2]) ? "<h5>$user_br[2]</h5>" : '' ?>
-
 </body>
 
 </html>
