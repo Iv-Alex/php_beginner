@@ -167,7 +167,6 @@ function get_user_browser_info($http_user_agent)
             background: #0088bd;
             color: white;
         }
-
         h4 {
             color: #0088bd;
         }
