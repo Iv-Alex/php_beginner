@@ -13,11 +13,11 @@ function print_dir($dir)
 {
     $file_list = array_diff(scandir($dir), ['.']);
     $table_body = '<tbody>';
-    foreach ($file_list as $item) {
+    foreach ($file_list as $key => $item) {
         $f_name = $item;
         $f_full_name = $dir . '/' . $f_name;
         $f_size = is_dir($f_full_name) ? '---' : human_filesize(filesize($f_full_name));
-        $f_actions = ($item == '..') ? '' : implode(' ', get_f_actions($file_list, 0));
+        $f_actions = ($item == '..') ? '' : implode(' ', get_f_actions($file_list, $key));
         $table_body .= "<tr><td>$f_name</td><td>$f_size</td><td>$f_actions</td></tr>";
     }
     $table_body .= '</tbody>';
@@ -32,6 +32,15 @@ function get_f_actions(&$items, $id, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'
     $actions = array();
     $actions[] = '<a href="">' . 'Переименовать' . '</a>';
     $actions[] = '<a href="">' . 'Удалить' . '</a>';
+    is_dir($items[$id]) ? true : $actions[] = '<a href="">' . 'Скачать' . '</a>';
+    if (
+        isset(pathinfo($items[$id])['extension'])
+        && in_array(strtoupper(pathinfo($items[$id])['extension']), $types)
+    ) {
+        $actions[] = '<a href="">' . 'Редактировать' . '</a>';
+    } else {
+        //ничего не делаем
+    }
     return $actions;
 }
 
