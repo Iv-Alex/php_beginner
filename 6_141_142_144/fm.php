@@ -60,12 +60,13 @@ if (isset($_POST['submit'])) {
 
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
-//(&МассивФайлов, ID(key), ДоступныеДляРедактированияТипыФайлов)
+//(&МассивФайлов, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
 function get_f_actions(&$items, $id, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'])
 {
+    global $root_dir;
     $actions = array();
     $actions[] = '<a href="">' . 'Переименовать' . '</a>';
-    $actions[] = '<a href="">' . 'Удалить' . '</a>';
+    $actions[] = '<a href="'. $root_dir . '?delete=' . $items[$id] . '">Удалить</a>';
     is_dir($items[$id]) ? true : $actions[] = '<a href="">' . 'Скачать' . '</a>';
     if (
         isset(pathinfo($items[$id])['extension'])
