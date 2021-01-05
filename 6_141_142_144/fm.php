@@ -1,6 +1,5 @@
 <?php
 error_reporting(E_ALL);
-//session_destroy();
 session_start();
 header('Content-Type: text/html; charset=utf-8');
 
@@ -23,7 +22,7 @@ function print_dir($dir)
     foreach ($file_list as $key => $item) {
         $f_full_name = $dir . '/' . $item;
         if ($isdir = is_dir($f_full_name)) {
-            $f_name = "<a href=\"$base_uri?goto=" . urlencode($item) . "\">$item</a>";
+            $f_name = "<a href=\"$base_uri?goto&file=" . urlencode($item) . "\">$item</a>";
             $f_size = '---';
         } else {
             // ! filesize() corrupt for > 2Gb and generates errors
@@ -71,42 +70,34 @@ if (isset($_POST['submit'])) {
     // ничего не делаем
 }
 
-//обработка удаления
-if (isset($_GET['delete'])) {
-    $del_file = $cur_dir . '/' . urldecode($_GET['delete']);
-    unlink($del_file);
+//обработка $_GET
+if (isset($_GET['file'])) {
+    $full_file_name = $cur_dir . '/' . urldecode($_GET['file']);
+    if (isset($_GET['delete'])) {
+        //обработка удаления
+        unlink($full_file_name);
+    } elseif (isset($_GET['goto'])) {
+        //обработка перехода по директориям
+        $_SESSION['cur_dir'] = realpath($full_file_name);
+    } elseif (isset($_GET['download'])) {
+        //обработка скачивания файла
+        file_force_download($full_file_name);
+    } else {
+        // ничего не делаем
+    }
     header('Location: ' . $base_uri);
-} else {
-    // ничего не делаем
-}
-
-//обработка перехода по директориям
-if (isset($_GET['goto'])) {
-    $_SESSION['cur_dir'] = realpath($cur_dir . '/' . urldecode($_GET['goto']));
-    header('Location: ' . $base_uri);
-} else {
-    // ничего не делаем
-}
-
-//обработка скачивания файла
-if (isset($_GET['download'])) {
-    $download_file = $cur_dir . '/' . urldecode($_GET['file']);
-    file_force_download($download_file);
-    header('Location: ' . $base_uri);
-} else {
-    // ничего не делаем
 }
 
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
-//(&МассивФайлов, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
+//(Файл, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
 function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'])
 {
     global $base_uri;
     $actions = array();
     $actions[] = '<a href="">' . 'Переименовать' . '</a>';
     $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
-        'href="' . $base_uri . '?delete=' . urlencode($f_name) . '">Удалить</a>';
+        'href="' . $base_uri . '?delete&file=' . urlencode($f_name) . '">Удалить</a>';
     if (!$isdir) $actions[] = '<a href="' . $base_uri . '?download&file=' . urlencode($f_name) . '">Скачать</a>';
 
     if (
