@@ -88,6 +88,15 @@ if (isset($_GET['goto'])) {
     // ничего не делаем
 }
 
+//обработка скачивания файла
+if (isset($_GET['download'])) {
+    $download_file = $cur_dir . '/' . urldecode($_GET['download']);
+    file_force_download($download_file);
+    header('Location: ' . $base_uri);
+} else {
+    // ничего не делаем
+}
+
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
 //(&МассивФайлов, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
@@ -98,7 +107,7 @@ function get_f_actions(&$items, $id, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'
     $actions[] = '<a href="">' . 'Переименовать' . '</a>';
     $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
         'href="' . $base_uri . '?delete=' . urlencode($items[$id]) . '">Удалить</a>';
-    is_dir($items[$id]) ? true : $actions[] = '<a href="">' . 'Скачать' . '</a>';
+    if (!is_dir($items[$id])) $actions[] = '<a href="' . $base_uri . '?download=' . urlencode($items[$id]) . '">Скачать</a>';
     if (
         isset(pathinfo($items[$id])['extension'])
         && in_array(strtoupper(pathinfo($items[$id])['extension']), $types)
