@@ -1,25 +1,36 @@
 <?php
 error_reporting(E_ALL);
+//session_destroy();
+session_start();
 header('Content-Type: text/html; charset=utf-8');
 
 $base_uri = $_SERVER['PHP_SELF'];
 
 //текущая директория
-// TODO save current directory to session variable
-$cur_dir = dirname(basename(__FILE__));
+//если переменная сессии не установлена или передан несуществующий путь,
+//то текущей ставим директорию скрипта
+if (!isset($_SESSION['cur_dir']) || ($_SESSION['cur_dir'] === false))
+    $_SESSION['cur_dir'] = realpath(dirname(basename(__FILE__)));
+$cur_dir = $_SESSION['cur_dir'];
 
 //функция выводит список директорий и файлов
 function print_dir($dir)
 {
+    global $base_uri;
     $file_list = array_diff(scandir($dir), ['.']);
     $dir_side = '';
     $file_side = '';
     foreach ($file_list as $key => $item) {
-        $f_name = $item;
-        $f_full_name = $dir . '/' . $f_name;
-        // ! filesize() corrupt for > 2Gb and generates errors
-        // ! realFileSize() doesn't work for unreadable files, and returns FALSE
-        $f_size = ($isdir = is_dir($f_full_name)) ? '---' : human_filesize(realFileSize($f_full_name));
+        $f_full_name = $dir . '/' . $item;
+        if ($isdir = is_dir($f_full_name)) {
+            $f_name = "<a href=\"$base_uri?goto=" . urlencode($item) . "\">$item</a>";
+            $f_size = '---';
+        } else {
+            // ! filesize() corrupt for > 2Gb and generates errors
+            // ! realFileSize() doesn't work for unreadable (system, etc.) files, and returns FALSE
+            $f_name = $item;
+            $f_size = human_filesize(real_filesize($f_full_name));
+        }
         $f_actions = ($item == '..') ? '' : implode(' ', get_f_actions($file_list, $key));
         $tr = "<tr><td>$f_name</td><td>$f_size</td><td>$f_actions</td></tr>";
         $isdir ? $dir_side .= $tr : $file_side .= $tr;
@@ -69,6 +80,14 @@ if (isset($_GET['delete'])) {
     // ничего не делаем
 }
 
+//обработка перехода по директориям
+if (isset($_GET['goto'])) {
+    $_SESSION['cur_dir'] = realpath($cur_dir . '/' . urldecode($_GET['goto']));
+    header('Location: ' . $base_uri);
+} else {
+    // ничего не делаем
+}
+
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
 //(&МассивФайлов, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
@@ -108,14 +127,14 @@ function human_filesize($bytes, $decimals = 2)
  * @return mixed File size or false if error
  */
 
-function realFileSize($path)
+function real_filesize($path)
 {
     //if (!file_exists($path))
-      //  return false;
+    //  return false;
 
-    $size = filesize($path);
+    $size = @filesize($path);
 
-    if (!($file = fopen($path, 'rb')))
+    if (!($file = @fopen($path, 'rb')))
         return false;
 
     if ($size >= 0) { //Check if it really is a small file (< 2 GB)
@@ -142,6 +161,33 @@ function realFileSize($path)
 
     fclose($file);
     return $size;
+}
+
+//функция скачивания файла
+//источник php.net
+// доработка от https://habr.com/ru/post/151795/
+// TODO в статье и комментах рассматриваются более применительные варианты
+function file_force_download($file)
+{
+    if (file_exists($file)) {
+        // сбрасываем буфер вывода PHP, чтобы избежать переполнения памяти выделенной под скрипт
+        // если этого не сделать файл будет читаться в память полностью!
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        // заставляем браузер показать окно сохранения файла
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Content-Transfer-Encoding: binary');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($file));
+        // читаем файл и отправляем его пользователю
+        readfile($file);
+        exit;
+    }
 }
 
 ?>
@@ -197,6 +243,7 @@ function realFileSize($path)
                 <input type="submit" name="submit" class="submit" value="Загрузить в текущую папку">
                 <?= isset($_GET['errors']) ? '<span class="err">При попытке загрузки файла(ов) бнаружены ошибки</span>' : '' ?>
             </form>
+            <div class="current-path"> <?= $cur_dir ?> </div>
             <table class="file-panel">
                 <thead>
                     <tr>
