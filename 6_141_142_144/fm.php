@@ -96,7 +96,8 @@ function get_f_actions(&$items, $id, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'
     global $base_uri;
     $actions = array();
     $actions[] = '<a href="">' . 'Переименовать' . '</a>';
-    $actions[] = '<a href="' . $base_uri . '?delete=' . urlencode($items[$id]) . '">Удалить</a>';
+    $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
+        'href="' . $base_uri . '?delete=' . urlencode($items[$id]) . '">Удалить</a>';
     is_dir($items[$id]) ? true : $actions[] = '<a href="">' . 'Скачать' . '</a>';
     if (
         isset(pathinfo($items[$id])['extension'])
