@@ -31,7 +31,7 @@ function print_dir($dir)
             $f_name = $item;
             $f_size = human_filesize(real_filesize($f_full_name));
         }
-        $f_actions = ($item == '..') ? '' : implode(' ', get_f_actions($file_list, $key));
+        $f_actions = ($item == '..') ? '' : implode(' ', get_f_actions($item, $isdir));
         $tr = "<tr><td>$f_name</td><td>$f_size</td><td>$f_actions</td></tr>";
         $isdir ? $dir_side .= $tr : $file_side .= $tr;
     }
@@ -90,7 +90,7 @@ if (isset($_GET['goto'])) {
 
 //обработка скачивания файла
 if (isset($_GET['download'])) {
-    $download_file = $cur_dir . '/' . urldecode($_GET['download']);
+    $download_file = $cur_dir . '/' . urldecode($_GET['file']);
     file_force_download($download_file);
     header('Location: ' . $base_uri);
 } else {
@@ -100,17 +100,18 @@ if (isset($_GET['download'])) {
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
 //(&МассивФайлов, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
-function get_f_actions(&$items, $id, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'])
+function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'])
 {
     global $base_uri;
     $actions = array();
     $actions[] = '<a href="">' . 'Переименовать' . '</a>';
     $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
-        'href="' . $base_uri . '?delete=' . urlencode($items[$id]) . '">Удалить</a>';
-    if (!is_dir($items[$id])) $actions[] = '<a href="' . $base_uri . '?download=' . urlencode($items[$id]) . '">Скачать</a>';
+        'href="' . $base_uri . '?delete=' . urlencode($f_name) . '">Удалить</a>';
+    if (!$isdir) $actions[] = '<a href="' . $base_uri . '?download&file=' . urlencode($f_name) . '">Скачать</a>';
+
     if (
-        isset(pathinfo($items[$id])['extension'])
-        && in_array(strtoupper(pathinfo($items[$id])['extension']), $types)
+        isset(pathinfo($f_name)['extension'])
+        && in_array(strtoupper(pathinfo($f_name)['extension']), $types)
     ) {
         $actions[] = '<a href="">' . 'Редактировать' . '</a>';
     } else {
