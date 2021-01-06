@@ -129,7 +129,7 @@ function new_folder($path)
 {
     $tmp_name = 'NewFolder_';
     $n = 1;
-    while (file_exists($tmp_name . $n)) $n++;
+    while (file_exists($path . '/' . $tmp_name . $n)) $n++;
     return mkdir($path . '/' . $tmp_name . $n);
 }
 
@@ -139,7 +139,7 @@ function del_tree($dir)
 {
     $files = array_diff(scandir($dir), array('.', '..'));
     foreach ($files as $file) {
-        (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file");
+        (is_dir("$dir/$file")) ? del_tree("$dir/$file") : unlink("$dir/$file");
     }
     return rmdir($dir);
 }
