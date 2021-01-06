@@ -22,7 +22,7 @@ function print_dir($dir)
     foreach ($file_list as $key => $item) {
         $f_full_name = $dir . '/' . $item;
         if ($isdir = is_dir($f_full_name)) {
-            $f_name = "<a href=\"$base_uri?goto&file=" . urlencode($item) . "\">$item</a>";
+            $f_name = "<a href=\"$base_uri?action=goto&file=" . urlencode($item) . "\">$item</a>";
             $f_size = '---';
         } else {
             // ! filesize() corrupt for > 2Gb and generates errors
@@ -30,7 +30,7 @@ function print_dir($dir)
             $f_name = $item;
             $f_size = human_filesize(real_filesize($f_full_name));
         }
-        $f_actions = ($item == '..') ? '' : implode(' ', get_f_actions($item, $isdir));
+        $f_actions = implode(' ', get_f_actions($item, $isdir));
         $tr = "<tr><td>$f_name</td><td>$f_size</td><td>$f_actions</td></tr>";
         $isdir ? $dir_side .= $tr : $file_side .= $tr;
     }
@@ -70,20 +70,29 @@ if (isset($_POST['submit'])) {
     // ничего не делаем
 }
 
-//обработка $_GET
-if (isset($_GET['file'])) {
+//обработка $_GET['action']
+if (isset($_GET['action']) && isset($_GET['file'])) {
     $full_file_name = $cur_dir . '/' . urldecode($_GET['file']);
-    if (isset($_GET['delete'])) {
-        //обработка удаления
-        unlink($full_file_name);
-    } elseif (isset($_GET['goto'])) {
-        //обработка перехода по директориям
-        $_SESSION['cur_dir'] = realpath($full_file_name);
-    } elseif (isset($_GET['download'])) {
-        //обработка скачивания файла
-        file_force_download($full_file_name);
-    } else {
-        // ничего не делаем
+    switch ($_GET['action']) {
+            //новая директория
+        case 'newfolder':
+            new_folder($cur_dir);
+            break;
+
+            //обработка удаления
+        case 'delete':
+            is_dir($full_file_name) ? del_tree($full_file_name) : unlink($full_file_name);
+            break;
+
+            //обработка перехода по директориям
+        case 'goto':
+            $_SESSION['cur_dir'] = realpath($full_file_name);
+            break;
+
+            //обработка скачивания файла
+        case 'download':
+            file_force_download($full_file_name);
+            break;
     }
     header('Location: ' . $base_uri);
 }
@@ -95,20 +104,44 @@ function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HT
 {
     global $base_uri;
     $actions = array();
-    $actions[] = '<a href="">' . 'Переименовать' . '</a>';
-    $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
-        'href="' . $base_uri . '?delete&file=' . urlencode($f_name) . '">Удалить</a>';
-    if (!$isdir) $actions[] = '<a href="' . $base_uri . '?download&file=' . urlencode($f_name) . '">Скачать</a>';
-
-    if (
-        isset(pathinfo($f_name)['extension'])
-        && in_array(strtoupper(pathinfo($f_name)['extension']), $types)
-    ) {
-        $actions[] = '<a href="">' . 'Редактировать' . '</a>';
+    if ($f_name == '..') {
+        $actions[] = '<a href="' . $base_uri . '?action=newfolder&file=.">Создать папку</a>';
     } else {
-        //ничего не делаем
+        $actions[] = '<a href="">' . 'Переименовать' . '</a>';
+        $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
+            'href="' . $base_uri . '?action=delete&file=' . urlencode($f_name) . '">Удалить</a>';
+        if (!$isdir) {
+            $actions[] = '<a href="' . $base_uri . '?action=download&file=' . urlencode($f_name) . '">Скачать</a>';
+        } elseif (
+            isset(pathinfo($f_name)['extension'])
+            && in_array(strtoupper(pathinfo($f_name)['extension']), $types)
+        ) {
+            $actions[] = '<a href="">' . 'Редактировать' . '</a>';
+        } else {
+            //ничего не делаем
+        }
     }
     return $actions;
+}
+
+//функция создания директории NewFolder_<NN>
+function new_folder($path)
+{
+    $tmp_name = 'NewFolder_';
+    $n = 1;
+    while (file_exists($tmp_name . $n)) $n++;
+    return mkdir($path . '/' . $tmp_name . $n);
+}
+
+//доработанная функция рекурсивного удаления файлов/дириктории
+//из php.net
+function del_tree($dir)
+{
+    $files = array_diff(scandir($dir), array('.', '..'));
+    foreach ($files as $file) {
+        (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file");
+    }
+    return rmdir($dir);
 }
 
 //функция возвращает удобочитаемый размер файлов
