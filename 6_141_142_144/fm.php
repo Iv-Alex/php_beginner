@@ -93,6 +93,11 @@ if (isset($_GET['action']) && isset($_GET['file'])) {
         case 'download':
             file_force_download($full_file_name);
             break;
+
+            //обработка переименования
+        case 'rename':
+            rename($full_file_name, $cur_dir . '/' . urldecode($_GET['newname']));
+            break;
     }
     header('Location: ' . $base_uri);
 }
@@ -107,14 +112,15 @@ function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HT
     if ($f_name == '..') {
         $actions[] = '<a href="' . $base_uri . '?action=newfolder&file=.">Создать папку</a>';
     } else {
-        $actions[] = '<a href="">' . 'Переименовать' . '</a>';
+        $actions[] = '<a class="rename" title="' . $f_name . '" ' .
+            'href="' . $base_uri . '?action=rename&file=' . urlencode($f_name) . '">Переименовать</a>';
         $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
             'href="' . $base_uri . '?action=delete&file=' . urlencode($f_name) . '">Удалить</a>';
         if (!$isdir) {
             $actions[] = '<a href="' . $base_uri . '?action=download&file=' . urlencode($f_name) . '">Скачать</a>';
         } elseif (
-            isset(pathinfo($f_name)['extension'])
-            && in_array(strtoupper(pathinfo($f_name)['extension']), $types)
+            isset(pathinfo($f_name)['extension']) &&
+            in_array(strtoupper(pathinfo($f_name)['extension']), $types)
         ) {
             $actions[] = '<a href="">' . 'Редактировать' . '</a>';
         } else {
@@ -234,6 +240,7 @@ function file_force_download($file)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <style>
         h1 {
             font-size: 1em;
@@ -291,6 +298,17 @@ function file_force_download($file)
             </table>
         </div>
     </main>
+    <script>
+        $('a.rename').click(function() {
+            let url = $(this).attr('href');
+            let fileName = prompt('Введите имя файла', $(this).attr('title'));
+            if (Boolean(fileName) != false) {
+                url += '&newname=' + encodeURI(fileName);
+                window.location.replace(url);
+            }
+            return false;
+        });
+    </script>
 </body>
 
 </html>
