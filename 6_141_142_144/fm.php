@@ -12,6 +12,44 @@ if (!isset($_SESSION['cur_dir']) || ($_SESSION['cur_dir'] === false))
     $_SESSION['cur_dir'] = realpath(dirname(basename(__FILE__)));
 $cur_dir = $_SESSION['cur_dir'];
 
+//Примем накопившиеся ошибки сессии и обнулим массив сессии для сбора новых ошибок
+if (isset($_SESSION['fm_errors']) && !empty($_SESSION['fm_errors'])) {
+    $fm_errors = $_SESSION['fm_errors'];
+} else {
+    $fm_errors = false;
+}
+$_SESSION['fm_errors'] = array();
+
+//Ошибки
+$error_codes = array(
+    //10xxx ошибки загрузки файлов
+    '1003' => 'Ошибка обработки файла на сервере',
+    '102' => 'Превышен допустимый размер файла.',
+    '104' => 'Не выбран файл для загрузки.',
+    //20xxx ошибки действий с файлами
+    '2001' => 'Файл или папка с таким именем уже существует',
+    //9999 неизвестная ошибка, сообщить код
+    '9999' => 'Код ошибки '
+);
+
+//функция вывода ошибок
+function print_errors(&$error_codes, &$errors_array)
+{
+    $error_block = '<div class="err">';
+    foreach ($errors_array as $error) {
+        if (array_key_exists($error[0], $error_codes)) {
+            $error_caption = $error_codes[$error[0]];
+        } else {
+            $error_caption = $error_codes['9999'] . $error[0];
+        }
+        $file_name = $error[1];
+        $error_block .= "<div><span class=\"error-side\">$error_caption:</span>" .
+            "<span class=\"file-side\">$file_name</span></div>";
+    }
+    $error_block .= '<a class="close-err" href="#">Скрыть блок ошибок</a></div>';
+    return $error_block;
+}
+
 //функция выводит список директорий и файлов
 function print_dir($dir)
 {
@@ -38,12 +76,10 @@ function print_dir($dir)
     return $table_body;
 }
 
-//обработка загрузки файла. Предполагается, что расширения обработаны формой
+//обработка загрузки файла
 if (isset($_POST['submit'])) {
     $source = $_FILES['files'];
-    // TODO можно отправлять в GET флаг о наличии ошибок, а в сессии хранить
-    // развернутую информацию по каждому случаю ошибки
-    // TODO около сообщения об ошибках сделать ссылку для pop-up инф-ции об ошибках
+    //Массив для ошибок
     $errors = array();
     foreach ($source['name'] as $key => $name) {
         $extension = '.' . strtolower(pathinfo($name)['extension']);
@@ -57,15 +93,16 @@ if (isset($_POST['submit'])) {
                 // успешная загрузка
             } else {
                 // сообщаем об ошибке загрузки файла на сервер
-                $errors[] = '103';
+                $errors[] = ['1003', $name];
             }
         } else {
             // другие ошибки - сообщаем код
-            $errors[] = $source['error'][$key];
+            $errors[] = [('10' . $source['error'][$key]), $name];
         }
     }
-    $get_params = empty($errors) ? '' : '?errors=' . implode(',', $errors);
-    header('Location: ' . $base_uri . $get_params);
+    //Передаем ошибки в сессию
+    if (!empty($errors)) $_SESSION['fm_errors'] = array_merge($_SESSION['fm_errors'], $errors);
+    header('Location: ' . $base_uri);
 } else {
     // ничего не делаем
 }
@@ -96,7 +133,13 @@ if (isset($_GET['action']) && isset($_GET['file'])) {
 
             //обработка переименования
         case 'rename':
-            rename($full_file_name, $cur_dir . '/' . urldecode($_GET['newname']));
+            $new_file_name = urldecode($_GET['newname']);
+            $rename_result = safety_rename($full_file_name, $cur_dir, $new_file_name);
+            if ($rename_result !== true) {
+                $_SESSION['fm_errors'][] = [$rename_result, $new_file_name];
+            } else {
+                //ничего не делаем
+            }
             break;
     }
     header('Location: ' . $base_uri);
@@ -114,15 +157,17 @@ function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HT
     } else {
         $actions[] = '<a class="rename" title="' . $f_name . '" ' .
             'href="' . $base_uri . '?action=rename&file=' . urlencode($f_name) . '">Переименовать</a>';
-        $actions[] = '<a onclick="return confirm(\'Вы уверены?\')"' .
-            'href="' . $base_uri . '?action=delete&file=' . urlencode($f_name) . '">Удалить</a>';
+        $actions[] = '<a class="r-u-sure" href="' . $base_uri . '?action=delete&file=' . urlencode($f_name) . '">Удалить</a>';
         if (!$isdir) {
             $actions[] = '<a href="' . $base_uri . '?action=download&file=' . urlencode($f_name) . '">Скачать</a>';
-        } elseif (
-            isset(pathinfo($f_name)['extension']) &&
-            in_array(strtoupper(pathinfo($f_name)['extension']), $types)
-        ) {
-            $actions[] = '<a href="">' . 'Редактировать' . '</a>';
+            if (
+                isset(pathinfo($f_name)['extension']) &&
+                in_array(strtoupper(pathinfo($f_name)['extension']), $types)
+            ) {
+                $actions[] = '<a href="">' . 'Редактировать' . '</a>';
+            } else {
+                //ничего не делаем
+            }
         } else {
             //ничего не делаем
         }
@@ -137,6 +182,27 @@ function new_folder($path)
     $n = 1;
     while (file_exists($path . '/' . $tmp_name . $n)) $n++;
     return mkdir($path . '/' . $tmp_name . $n);
+}
+
+//функция переименования безопасного файла/директории (старое_имя_файла, новое_имя_файла)
+//возвращает true в случае успеха, либо код ошибки в случае неудачи
+function safety_rename($old_full_name, $path, $new_file_name)
+{
+    //Удаляем из имени файла запрещенные или частично(в зависимости от ОС) запрещенные символы
+    $forbidden = ['/', '\\', '*', ':', '?', '|', '"', '<', '>', '+', '%', '!', '@'];
+    $new_file_name = str_replace($forbidden, '', trim($new_file_name));
+
+    $new_full_name = $path . '/' . $new_file_name;
+    if (!file_exists($new_full_name)) {
+        try {
+            $result = rename($old_full_name, $new_full_name);
+        } catch (Exception $error) {
+            $result = '1003';
+        }
+    } else {
+        $result = '2001';
+    }
+    return $result;
 }
 
 //доработанная функция рекурсивного удаления файлов/дириктории
@@ -268,9 +334,13 @@ function file_force_download($file)
             text-align: right;
         }
 
-        span.err {
-            display: block;
+        div.err {
+            margin: 2em 0;
+        }
+
+        div.err .error-side {
             color: red;
+            margin-right: 1em;
         }
     </style>
 </head>
@@ -279,11 +349,11 @@ function file_force_download($file)
     <main>
         <div class="main">
             <h1>Файловый менеджер</h1>
+            <?= ($fm_errors !== false) ? print_errors($error_codes, $fm_errors) : '' ?>
             <form name="upload_form" id="upload-form" action="" enctype="multipart/form-data" method="post">
                 <input type="hidden" name="MAX_FILE_SIZE" value="10000000">
                 <input id="fln" type="file" name="files[]" class="input" multiple title="Выберите файлы для загрузки" required value="Обзор...">
                 <input type="submit" name="submit" class="submit" value="Загрузить в текущую папку">
-                <?= isset($_GET['errors']) ? '<span class="err">При попытке загрузки файла(ов) бнаружены ошибки</span>' : '' ?>
             </form>
             <div class="current-path"> <?= $cur_dir ?> </div>
             <table class="file-panel">
@@ -306,6 +376,15 @@ function file_force_download($file)
                 url += '&newname=' + encodeURI(fileName);
                 window.location.replace(url);
             }
+            return false;
+        });
+
+        $('a.r-u-sure').click(function() {
+            return confirm('Вы уверены?');
+        });
+
+        $('a.close-err').click(function() {
+            $('div.err').remove();
             return false;
         });
     </script>
