@@ -1,7 +1,7 @@
 <?php
 error_reporting(E_ALL);
-session_start();
 header('Content-Type: text/html; charset=utf-8');
+session_start();
 
 $base_uri = $_SERVER['PHP_SELF'];
 
@@ -12,15 +12,8 @@ if (!isset($_SESSION['cur_dir']) || ($_SESSION['cur_dir'] === false))
     $_SESSION['cur_dir'] = realpath(dirname(basename(__FILE__)));
 $cur_dir = $_SESSION['cur_dir'];
 
-//Примем накопившиеся ошибки сессии и обнулим массив сессии для сбора новых ошибок
-if (isset($_SESSION['fm_errors']) && !empty($_SESSION['fm_errors'])) {
-    $fm_errors = $_SESSION['fm_errors'];
-} else {
-    $fm_errors = false;
-}
-$_SESSION['fm_errors'] = array();
-
 //Ошибки
+//TODO написать обработчики событий Warning
 $error_codes = array(
     //10xxx ошибки загрузки файлов
     '1003' => 'Ошибка обработки файла на сервере',
@@ -31,6 +24,116 @@ $error_codes = array(
     //9999 неизвестная ошибка, сообщить код
     '9999' => 'Код ошибки '
 );
+
+//Примем накопившиеся ошибки сессии и обнулим массив сессии для сбора новых ошибок
+if (isset($_SESSION['fm_errors']) && !empty($_SESSION['fm_errors'])) {
+    $fm_errors = $_SESSION['fm_errors'];
+} else {
+    $fm_errors = false;
+}
+$_SESSION['fm_errors'] = array();
+
+//обработка $_POST
+//обработка загрузки файла
+if (isset($_POST['submit'])) {
+    $source = $_FILES['files'];
+    //Массив для ошибок
+    $errors = array();
+    foreach ($source['name'] as $key => $name) {
+        $extension = '.' . strtolower(pathinfo($name)['extension']);
+        // проверяем на ошибки
+        if ($source['error'][$key] == 0) {
+            //если нет ошибок
+            //формируем имя файла, добавляем путь и расширение
+            $file_name = $cur_dir . '/' . $name;
+            // копируем файл из временной папки в постоянную
+            if (move_uploaded_file($source['tmp_name'][$key], $file_name)) {
+                // успешная загрузка
+            } else {
+                // сообщаем об ошибке загрузки файла на сервер
+                $errors[] = ['1003', $name];
+            }
+        } else {
+            // другие ошибки - сообщаем код
+            $errors[] = [('10' . $source['error'][$key]), $name];
+        }
+    }
+    //Передаем ошибки в сессию
+    if (!empty($errors)) $_SESSION['fm_errors'] = array_merge($_SESSION['fm_errors'], $errors);
+    header('Location: ' . $base_uri);
+
+    //обработка изменения файла
+} elseif (isset($_POST['save_file'])) {
+    if (isset($_POST['file_contents'])) {
+        file_put_contents($_SESSION['edit_file'], $_POST['file_contents']);
+    } else {
+        //ничего не делаем
+    }
+    unset($_SESSION['edit_file']);
+} else {
+    // ничего не делаем
+}
+
+//TODO написать обработчики событий Warning
+//обработка $_GET['action']
+if (isset($_GET['action'])) {
+    $full_file_name = isset($_GET['file']) ? $cur_dir . '/' . urldecode($_GET['file']) : '';
+    switch ($_GET['action']) {
+            //отмена редактирования файла
+        case 'cancel-edit':
+            unset($_SESSION['edit_file']);
+            break;
+
+            //новая директория
+        case 'newfolder':
+            new_folder($cur_dir);
+            break;
+
+            //обработка удаления
+        case 'delete':
+            is_dir($full_file_name) ? del_tree($full_file_name) : unlink($full_file_name);
+            break;
+
+            //обработка перехода по директориям
+        case 'goto':
+            $_SESSION['cur_dir'] = realpath($full_file_name);
+            break;
+
+            //обработка скачивания файла
+        case 'download':
+            file_force_download($full_file_name);
+            break;
+
+            //обработка переименования
+        case 'rename':
+            $new_file_name = isset($_GET['newname']) ? urldecode($_GET['newname']) : '';
+            $rename_result = safety_rename($full_file_name, $cur_dir, $new_file_name);
+            if ($rename_result !== true) {
+                $_SESSION['fm_errors'][] = [$rename_result, $new_file_name];
+            } else {
+                //ничего не делаем
+            }
+            break;
+
+            //обработка редактирования файла
+        case 'edit':
+            $_SESSION['edit_file'] = $full_file_name;
+            break;
+    }
+    header('Location: ' . $base_uri);
+}
+
+//Вид страницы:
+// - 1 - менеджер файлов
+// - 2 - редактор
+// - NN - иные варианты
+//если указан и существует файл редактирования, то редактор
+if (isset($_SESSION['edit_file']) && (file_exists($_SESSION['edit_file']))) {
+    $edit_file = $_SESSION['edit_file'];
+    $page_type = 2;
+} else {
+    $page_type = 1;
+}
 
 //функция вывода ошибок
 function print_errors(&$error_codes, &$errors_array)
@@ -76,75 +179,6 @@ function print_dir($dir)
     return $table_body;
 }
 
-//обработка загрузки файла
-if (isset($_POST['submit'])) {
-    $source = $_FILES['files'];
-    //Массив для ошибок
-    $errors = array();
-    foreach ($source['name'] as $key => $name) {
-        $extension = '.' . strtolower(pathinfo($name)['extension']);
-        // проверяем на ошибки
-        if ($source['error'][$key] == 0) {
-            //если нет ошибок
-            //формируем имя файла, добавляем путь и расширение
-            $file_name = $cur_dir . '/' . $name;
-            // копируем файл из временной папки в постоянную
-            if (move_uploaded_file($source['tmp_name'][$key], $file_name)) {
-                // успешная загрузка
-            } else {
-                // сообщаем об ошибке загрузки файла на сервер
-                $errors[] = ['1003', $name];
-            }
-        } else {
-            // другие ошибки - сообщаем код
-            $errors[] = [('10' . $source['error'][$key]), $name];
-        }
-    }
-    //Передаем ошибки в сессию
-    if (!empty($errors)) $_SESSION['fm_errors'] = array_merge($_SESSION['fm_errors'], $errors);
-    header('Location: ' . $base_uri);
-} else {
-    // ничего не делаем
-}
-
-//обработка $_GET['action']
-if (isset($_GET['action']) && isset($_GET['file'])) {
-    $full_file_name = $cur_dir . '/' . urldecode($_GET['file']);
-    switch ($_GET['action']) {
-            //новая директория
-        case 'newfolder':
-            new_folder($cur_dir);
-            break;
-
-            //обработка удаления
-        case 'delete':
-            is_dir($full_file_name) ? del_tree($full_file_name) : unlink($full_file_name);
-            break;
-
-            //обработка перехода по директориям
-        case 'goto':
-            $_SESSION['cur_dir'] = realpath($full_file_name);
-            break;
-
-            //обработка скачивания файла
-        case 'download':
-            file_force_download($full_file_name);
-            break;
-
-            //обработка переименования
-        case 'rename':
-            $new_file_name = urldecode($_GET['newname']);
-            $rename_result = safety_rename($full_file_name, $cur_dir, $new_file_name);
-            if ($rename_result !== true) {
-                $_SESSION['fm_errors'][] = [$rename_result, $new_file_name];
-            } else {
-                //ничего не делаем
-            }
-            break;
-    }
-    header('Location: ' . $base_uri);
-}
-
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
 //(Файл, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
@@ -158,18 +192,12 @@ function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HT
         $actions[] = '<a class="rename" title="' . $f_name . '" ' .
             'href="' . $base_uri . '?action=rename&file=' . urlencode($f_name) . '">Переименовать</a>';
         $actions[] = '<a class="r-u-sure" href="' . $base_uri . '?action=delete&file=' . urlencode($f_name) . '">Удалить</a>';
-        if (!$isdir) {
-            $actions[] = '<a href="' . $base_uri . '?action=download&file=' . urlencode($f_name) . '">Скачать</a>';
-            if (
-                isset(pathinfo($f_name)['extension']) &&
-                in_array(strtoupper(pathinfo($f_name)['extension']), $types)
-            ) {
-                $actions[] = '<a href="">' . 'Редактировать' . '</a>';
-            } else {
-                //ничего не делаем
-            }
-        } else {
-            //ничего не делаем
+        if (!$isdir) $actions[] = '<a href="' . $base_uri . '?action=download&file=' . urlencode($f_name) . '">Скачать</a>';
+        if (
+            isset(pathinfo($f_name)['extension']) &&
+            in_array(strtoupper(pathinfo($f_name)['extension']), $types)
+        ) {
+            $actions[] = '<a href="' . $base_uri . '?action=edit&file=' . urlencode($f_name) . '">Редактировать</a>';
         }
     }
     return $actions;
@@ -342,52 +370,93 @@ function file_force_download($file)
             color: red;
             margin-right: 1em;
         }
+
+        #editor-form {
+            text-align: right;
+        }
+
+        #file-contents {
+            min-width: 100%;
+            max-width: 100%;
+        }
     </style>
 </head>
 
 <body>
-    <main>
-        <div class="main">
-            <h1>Файловый менеджер</h1>
-            <?= ($fm_errors !== false) ? print_errors($error_codes, $fm_errors) : '' ?>
-            <form name="upload_form" id="upload-form" action="" enctype="multipart/form-data" method="post">
-                <input type="hidden" name="MAX_FILE_SIZE" value="10000000">
-                <input id="fln" type="file" name="files[]" class="input" multiple title="Выберите файлы для загрузки" required value="Обзор...">
-                <input type="submit" name="submit" class="submit" value="Загрузить в текущую папку">
-            </form>
-            <div class="current-path"> <?= $cur_dir ?> </div>
-            <table class="file-panel">
-                <thead>
-                    <tr>
-                        <th>Имя файла или папки</th>
-                        <th>Размер</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <?= print_dir($cur_dir) ?>
-            </table>
-        </div>
-    </main>
-    <script>
-        $('a.rename').click(function() {
-            let url = $(this).attr('href');
-            let fileName = prompt('Введите имя файла', $(this).attr('title'));
-            if (Boolean(fileName) != false) {
-                url += '&newname=' + encodeURI(fileName);
+
+    <?php
+    if ($page_type == 1) {
+        //файловый менеджер
+    ?>
+        <main>
+            <div class="main">
+                <h1>Файловый менеджер</h1>
+
+                <?= ($fm_errors !== false) ? print_errors($error_codes, $fm_errors) : '' ?>
+                <form name="upload_form" id="upload-form" action="" enctype="multipart/form-data" method="post">
+                    <input type="hidden" name="MAX_FILE_SIZE" value="10000000">
+                    <input id="fln" type="file" name="files[]" class="input" multiple title="Выберите файлы для загрузки" required value="Обзор...">
+                    <input type="submit" name="submit" class="submit" value="Загрузить в текущую папку">
+                </form>
+                <div class="current-path"> <?= $cur_dir ?> </div>
+                <table class="file-panel">
+                    <thead>
+                        <tr>
+                            <th>Имя файла или папки</th>
+                            <th>Размер</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <?= print_dir($cur_dir) ?>
+                </table>
+            </div>
+        </main>
+        <script>
+            $('a.rename').click(function() {
+                let url = $(this).attr('href');
+                let fileName = prompt('Введите имя файла', $(this).attr('title'));
+                if (Boolean(fileName) != false) {
+                    url += '&newname=' + encodeURI(fileName);
+                    window.location.replace(url);
+                }
+                return false;
+            });
+
+            $('a.r-u-sure').click(function() {
+                return confirm('Вы уверены?');
+            });
+
+            $('a.close-err').click(function() {
+                $('div.err').remove();
+                return false;
+            });
+        </script>
+    <?php
+    } elseif ($page_type == 2) {
+    ?>
+        <main>
+            <div class="editor">
+                <h1>Редактор файлов</h1>
+                <div class="current-file"> <?= $edit_file ?> </div>
+                <form name="editor_form" id="editor-form" method="post">
+                    <textarea name="file_contents" id="file-contents" rows="30"><?= file_get_contents($edit_file) ?></textarea>
+                    <div>
+                        <input type="submit" name="save_file" id="save-file" class="save_file" value="Сохранить изменения">
+                        <input type="button" id="cancel-edit" value="Отменить">
+                    </div>
+                </form>
+            </div>
+        </main>
+        <script>
+            $('input#cancel-edit').click(function() {
+                let url = window.location.href + '?action=cancel-edit';
                 window.location.replace(url);
-            }
-            return false;
-        });
-
-        $('a.r-u-sure').click(function() {
-            return confirm('Вы уверены?');
-        });
-
-        $('a.close-err').click(function() {
-            $('div.err').remove();
-            return false;
-        });
-    </script>
+                return false;
+            });
+        </script>
+    <?php
+    }
+    ?>
 </body>
 
 </html>
