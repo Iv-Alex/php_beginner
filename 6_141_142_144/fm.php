@@ -88,8 +88,6 @@ if (isset($_GET['action'])) {
     } elseif ($_GET['action'] == 'view') {
         $page_type = 3;
         $view_file = $full_file_name;
-        $imageData = base64_encode(file_get_contents($view_file));
-        $src = 'data: ' . mime_content_type($view_file) . ';base64,' . $imageData;
     } else {
         switch ($_GET['action']) {
 
@@ -234,6 +232,14 @@ function safety_rename($old_full_name, $path, $new_file_name)
         $result = '2001';
     }
     return $result;
+}
+
+//функция подготовки изображения base64
+function base64_img($image_file)
+{
+    $imageData = base64_encode(file_get_contents($image_file));
+    $src = 'data: ' . mime_content_type($image_file) . ';base64,' . $imageData;
+    return $src;
 }
 
 //доработанная функция рекурсивного удаления файлов/дириктории
@@ -459,7 +465,7 @@ function file_force_download($file)
         </script>
     <?php
     } elseif ($page_type == 3) {
-        echo '<img src="' . $src . '" alt="">';
+        echo '<img src="' . base64_img($view_file) . '" alt="">';
     }
     ?>
 </body>
