@@ -63,76 +63,73 @@ if (isset($_POST['submit'])) {
     header('Location: ' . $base_uri);
 
     //обработка изменения файла
-} elseif (isset($_POST['save_file'])) {
-    if (isset($_POST['file_contents'])) {
-        file_put_contents($_SESSION['edit_file'], $_POST['file_contents']);
-    } else {
-        //ничего не делаем
-    }
-    unset($_SESSION['edit_file']);
+} elseif (isset($_POST['save_file']) && isset($_POST['file_contents'])) {
+    file_put_contents($_SESSION['edit_file'], $_POST['file_contents']);
 } else {
     // ничего не делаем
 }
 
 //TODO написать обработчики событий Warning
+//Вид страницы $page_type:
+// - 1 - менеджер файлов
+// - 2 - редактор
+// - 3 - просмотр изображений
+// - NN - иные варианты
+$page_type = 1;
+
 //обработка $_GET['action']
 if (isset($_GET['action'])) {
     $full_file_name = isset($_GET['file']) ? $cur_dir . '/' . urldecode($_GET['file']) : '';
-    switch ($_GET['action']) {
-            //отмена редактирования файла
-        case 'cancel-edit':
-            unset($_SESSION['edit_file']);
-            break;
+    //обработка редактирования файла
+    if ($_GET['action'] == 'edit') {
+        $page_type = 2;
+        $edit_file = $full_file_name;
+        //просмотр изображений
+    } elseif ($_GET['action'] == 'view') {
+        $page_type = 3;
+        $view_file = $full_file_name;
+        $imageData = base64_encode(file_get_contents($view_file));
+        $src = 'data: ' . mime_content_type($view_file) . ';base64,' . $imageData;
+    } else {
+        switch ($_GET['action']) {
 
-            //новая директория
-        case 'newfolder':
-            new_folder($cur_dir);
-            break;
+                //отмена редактирования файла
+            case 'cancel-edit':
+                break;
 
-            //обработка удаления
-        case 'delete':
-            is_dir($full_file_name) ? del_tree($full_file_name) : unlink($full_file_name);
-            break;
+                //новая директория
+            case 'newfolder':
+                new_folder($cur_dir);
+                break;
 
-            //обработка перехода по директориям
-        case 'goto':
-            $_SESSION['cur_dir'] = realpath($full_file_name);
-            break;
+                //обработка удаления
+            case 'delete':
+                is_dir($full_file_name) ? del_tree($full_file_name) : unlink($full_file_name);
+                break;
 
-            //обработка скачивания файла
-        case 'download':
-            file_force_download($full_file_name);
-            break;
+                //обработка перехода по директориям
+            case 'goto':
+                $_SESSION['cur_dir'] = realpath($full_file_name);
+                break;
 
-            //обработка переименования
-        case 'rename':
-            $new_file_name = isset($_GET['newname']) ? urldecode($_GET['newname']) : '';
-            $rename_result = safety_rename($full_file_name, $cur_dir, $new_file_name);
-            if ($rename_result !== true) {
-                $_SESSION['fm_errors'][] = [$rename_result, $new_file_name];
-            } else {
-                //ничего не делаем
-            }
-            break;
+                //обработка скачивания файла
+            case 'download':
+                file_force_download($full_file_name);
+                break;
 
-            //обработка редактирования файла
-        case 'edit':
-            $_SESSION['edit_file'] = $full_file_name;
-            break;
+                //обработка переименования
+            case 'rename':
+                $new_file_name = isset($_GET['newname']) ? urldecode($_GET['newname']) : '';
+                $rename_result = safety_rename($full_file_name, $cur_dir, $new_file_name);
+                if ($rename_result !== true) {
+                    $_SESSION['fm_errors'][] = [$rename_result, $new_file_name];
+                } else {
+                    //ничего не делаем
+                }
+                break;
+        }
+        header('Location: ' . $base_uri);
     }
-    header('Location: ' . $base_uri);
-}
-
-//Вид страницы:
-// - 1 - менеджер файлов
-// - 2 - редактор
-// - NN - иные варианты
-//если указан и существует файл редактирования, то редактор
-if (isset($_SESSION['edit_file']) && (file_exists($_SESSION['edit_file']))) {
-    $edit_file = $_SESSION['edit_file'];
-    $page_type = 2;
-} else {
-    $page_type = 1;
 }
 
 //функция вывода ошибок
@@ -182,22 +179,28 @@ function print_dir($dir)
 //Функция возвращает перечень возможных действий с файлом/директорией
 //в виде массива ссылок
 //(Файл, ID(key), DeleteModul, ДоступныеДляРедактированияТипыФайлов)
-function get_f_actions($f_name, $isdir, $types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'])
-{
+function get_f_actions(
+    $f_name,
+    $isdir,
+    $edit_types = ['TXT', 'PHP', 'PL', 'HTM', 'HTML'],
+    $view_types = ['JPG', 'PNG', 'GIF', 'BMP']
+) {
     global $base_uri;
+    $f_url_name = urlencode($f_name);
     $actions = array();
     if ($f_name == '..') {
         $actions[] = '<a href="' . $base_uri . '?action=newfolder&file=.">Создать папку</a>';
     } else {
-        $actions[] = '<a class="rename" title="' . $f_name . '" ' .
-            'href="' . $base_uri . '?action=rename&file=' . urlencode($f_name) . '">Переименовать</a>';
-        $actions[] = '<a class="r-u-sure" href="' . $base_uri . '?action=delete&file=' . urlencode($f_name) . '">Удалить</a>';
-        if (!$isdir) $actions[] = '<a href="' . $base_uri . '?action=download&file=' . urlencode($f_name) . '">Скачать</a>';
-        if (
-            isset(pathinfo($f_name)['extension']) &&
-            in_array(strtoupper(pathinfo($f_name)['extension']), $types)
-        ) {
-            $actions[] = '<a href="' . $base_uri . '?action=edit&file=' . urlencode($f_name) . '">Редактировать</a>';
+        $actions[] = '<a class="rename" title="Переименовать файл" ' .
+            'href="' . $base_uri . '?action=rename&file=' . $f_name . '">Переименовать</a>';
+        $actions[] = '<a class="r-u-sure" href="' . $base_uri . '?action=delete&file=' . $f_url_name . '">Удалить</a>';
+        if (!$isdir) $actions[] = '<a href="' . $base_uri . '?action=download&file=' . $f_url_name . '">Скачать</a>';
+        if (isset(pathinfo($f_name)['extension'])) {
+            if (in_array(strtoupper(pathinfo($f_name)['extension']), $edit_types))
+                $actions[] = '<a href="' . $base_uri . '?action=edit&file=' . $f_url_name . '">Редактировать</a>';
+            if (in_array(strtoupper(pathinfo($f_name)['extension']), $view_types))
+                $actions[] = '<a href="' . $base_uri . '?action=view&file=' . $f_url_name .
+                    '" title="Открывается в новом окне" target="_blank">Просмотреть</a>';
         }
     }
     return $actions;
@@ -455,6 +458,8 @@ function file_force_download($file)
             });
         </script>
     <?php
+    } elseif ($page_type == 3) {
+        echo '<img src="' . $src . '" alt="">';
     }
     ?>
 </body>
