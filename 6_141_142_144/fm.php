@@ -65,6 +65,7 @@ if (isset($_POST['submit'])) {
     //обработка изменения файла
 } elseif (isset($_POST['save_file']) && isset($_POST['file_contents'])) {
     file_put_contents($_SESSION['edit_file'], $_POST['file_contents']);
+    header('Location: ' . $base_uri);
 } else {
     // ничего не делаем
 }
@@ -83,7 +84,7 @@ if (isset($_GET['action'])) {
     //обработка редактирования файла
     if ($_GET['action'] == 'edit') {
         $page_type = 2;
-        $edit_file = $full_file_name;
+        $_SESSION['edit_file'] = $full_file_name;
         //просмотр изображений
     } elseif ($_GET['action'] == 'view') {
         $page_type = 3;
@@ -93,6 +94,7 @@ if (isset($_GET['action'])) {
 
                 //отмена редактирования файла
             case 'cancel-edit':
+                unset($_SESSION['edit_file']);
                 break;
 
                 //новая директория
@@ -446,9 +448,9 @@ function file_force_download($file)
         <main>
             <div class="editor">
                 <h1>Редактор файлов</h1>
-                <div class="current-file"> <?= $edit_file ?> </div>
+                <div class="current-file"> <?= $_SESSION['edit_file'] ?> </div>
                 <form name="editor_form" id="editor-form" method="post">
-                    <textarea name="file_contents" id="file-contents" rows="30"><?= file_get_contents($edit_file) ?></textarea>
+                    <textarea name="file_contents" id="file-contents" rows="30"><?= file_get_contents($_SESSION['edit_file']) ?></textarea>
                     <div>
                         <input type="submit" name="save_file" id="save-file" class="save_file" value="Сохранить изменения">
                         <input type="button" id="cancel-edit" value="Отменить">
@@ -458,7 +460,7 @@ function file_force_download($file)
         </main>
         <script>
             $('input#cancel-edit').click(function() {
-                let url = window.location.href + '?action=cancel-edit';
+                let url = '<?= $base_uri ?>?action=cancel-edit';
                 window.location.replace(url);
                 return false;
             });
