@@ -1,13 +1,12 @@
 <?php
 /*
-Вывести дату последнего рабочего дня в каждом месяце за $x год,
-где $x - случайный год от 2010 до 2030г.
+Задание к уроку "Задача: последний рабочий день 2"
+Задача аналогично предыдущей, только нужно вывести не целый год,
+а только один месяц (где месяц и год случайны).
 В формате:
-01 январь - 31 января 2018,
-02 февраль - 27 февраля 2018,
-03 март - 30 марта 2018,
-и т д,
-также учитывать праздники!
+Случайный месяц - апрель.
+Случайных год - 2025.
+Последний рабочий день - 29 апреля 2025г.
 */
 
 error_reporting(E_ALL);
@@ -29,10 +28,9 @@ $str_month = [
 ];
 
 $x = rand(2010, 2030);
+$i = rand(0, 12);
 
-for ($i = 1; $i < 13; $i++) {
-    echo last_work_day($i, $x);
-}
+echo last_work_day($i, $x);
 
 function last_work_day($month, $year)
 {
@@ -43,9 +41,10 @@ function last_work_day($month, $year)
     $last_month_day = intval(date('j', $timestamp));
     $day_of_week = intval(strftime('%w', $timestamp));
     $day = $last_month_day + $offset[$day_of_week];
-    $formatted_day = sprintf('%02d ', $month) .
-        $str_month[$month - 1][0] . ' - ' . $day . ' ' .
-        $str_month[$month - 1][1] . ' ' . $year . '<br>';
+    $formatted_day =
+        'Случайный месяц - ' . $str_month[$month - 1][0] . '.<br>' .
+        'Случайный год - ' . $year . '.<br>' .
+        'Последний рабочий день - ' . $day . ' ' . $str_month[$month - 1][1] . ' ' . $year . 'г.<br>';
 
     return $formatted_day;
 }
