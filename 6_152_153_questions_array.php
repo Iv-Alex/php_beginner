@@ -5,6 +5,8 @@
 Необходимо вывести форму для голосования (также как у нас тут после уроков)
 с вопросами и ответами, чтобы пользователь мог выбрать ответы и узнать верно
 он ответил или нет.
+Задание к уроку #153 "Массив вопросов и ответов 2"
+Задача аналогична предыдущей, только вопросы и ответы нужно выводить в случайном порядке.
 */
 
 error_reporting(E_ALL);
@@ -69,14 +71,13 @@ function show_questions(&$questions, $name_prefix = 'q', $randomise = false)
 {
     $_SESSION['questions'] = array();                           //массив вопросов
     $_SESSION['result'] = 0;                                    //количество правильных ответов, на случай нескольких правильных в одном вопросе
-//TODO randomize
+    if ($randomise) shuffle($questions);                        //перемешиваем вопросы
     $questions_html = '<div class="questions">';
     for ($i = 0; $i < count($questions); $i++) {
+        if ($randomise) shuffle($questions[$i][1]);             //перемешиваем ответы
         $questions_html .= '<label>' . $questions[$i][0] . '<br>';
         //сохраним текущее состояние массива вопросов в сессию
         $_SESSION['questions'][$name_prefix . $i] = [$questions[$i][0], $questions[$i][1]];
-//TODO randomize
-
         for ($j = 0; $j < count($questions[$i][1]); $j++) {
             $questions_html .=
                 '<input type="radio" name="' . $name_prefix . $i . '" value="' . $j . '" required>' .
@@ -137,7 +138,7 @@ function show_result()
 <body>
     <?= show_result() ?>
     <form id="questions" action="" method="post">
-        <?= show_questions($questions) ?>
+        <?= show_questions($questions, 'que', true) ?>
         <div class="submit">
             <button id="submit" name="submit" type="submit">Отправить</button>
         </div>
