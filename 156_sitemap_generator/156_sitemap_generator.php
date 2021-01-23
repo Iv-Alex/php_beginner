@@ -4,13 +4,34 @@ header('Content-Type: text/html; charset=utf-8');
 
 $base_url = $_SERVER['PHP_SELF'];              //script absolute URI
 $sitemap_file = './sitemap.xml';               //sitemap filename
-$start_url = 'http://tickets.logycon.ru';      //uri for sitemap
+$start_url = 'http://znanieetosila.ru/';     //uri for sitemap
+$sitemap_limit = 30;                          //max count URLs in sitemap
 
-$freq = '3';
-$priority = '1.0';
+$freq = 'weekly';
+$priority = 1;
+
+$target = fopen($sitemap_file, "w");
+if (!$target) {
+    //    echo "Cannot create $$sitemap_file!" . NL;
+    return;
+}
+
+fwrite($target, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" .
+    "<?xml-stylesheet type=\"text/xsl\" href=\"\"?>\n" .
+    "<!-- Created with Iv-Alex Sitemap Generator 0.1 -->\n" .
+    "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n" .
+    "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" .
+    "        xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9\n" .
+    "        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n");
+$urls_count = 0;
+add_links_to_map($start_url, $start_url, $target, $priority, $freq, $sitemap_limit, $urls_count);
+
+fwrite($target, "</urlset>\n");
+fclose($target);
+echo $urls_count;
 
 //recursive site crawling
-function add_links_to_array($start_url, $url, &$file)
+function add_links_to_map($start_url, $url, &$file, $priority, $freq, $sitemap_limit, &$urls_count)
 {
     //массив проверенных ссылок
     static $seen_links;
@@ -26,35 +47,36 @@ function add_links_to_array($start_url, $url, &$file)
     ) {
         //записываем в просмотренные
         $seen_links[] = $url;
-        //если ссылка содержит базовый путь,
-        //пройдем по ссылке
+        //если ссылка содержит базовый путь, пройдем по ссылке
         if (strpos(
             str_replace('https://', 'http://', $url),
             str_replace('https://', 'http://', $start_url)
         ) !== false) {
             //получим содержимое по $url
             $link_data = get_link_data($url);
-            //продолжим, если есть <title> и
-            //отдает заголовок 200 ОК
+            //продолжим, если есть <title> и отдает заголовок 200 ОК
             if (
                 get_title($link_data['html_data'])
                 && ($link_data['http_response'] == 200)
             ) {
                 //добавим страницу в карту
-                fwrite($file, $url . "\n");
+                $urls_count++;
+                $current_priority = number_format(round($priority / count(explode("/", str_ireplace(["http://", "https://"], "", $url))) + 0.5, 3), 2);
+                fwrite($file, "  <url>\n" .
+                    "    <loc>" . htmlentities($url) . "</loc>\n" .
+                    "    <changefreq>$freq</changefreq>\n" .
+                    "    <priority>$current_priority</priority>\n" .
+                    "  </url>\n");
                 //выберем все ссылки в документе и освободим память
                 $links = get_all_href($link_data['html_data']);
                 unset($link_data);
                 $links = array_unique($links);
 
-                echo '<pre>';
-                print_r($links);
-                echo '</pre>';
-
                 foreach ($links as $link) {
                     if (strlen($link) > 0) {
                         $href = rel2abs($link, $url);
-                        add_links_to_array($start_url, $href, $file);
+                        if ($urls_count < $sitemap_limit)
+                            add_links_to_map($start_url, $href, $file, $priority, $freq, $sitemap_limit, $urls_count);
                     }
                 }
             } else {
@@ -136,26 +158,3 @@ function get_title($str)
     $title = preg_match("~<title>(.*?)</title>~iu", $str, $out) ? $out[1] : '';
     return $title;
 }
-
-$target = fopen($sitemap_file, "w");
-if (!$target) {
-    //    echo "Cannot create $$sitemap_file!" . NL;
-    return;
-}
-
-fwrite($target, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" .
-    "<?xml-stylesheet type=\"text/xsl\" href=\"\"?>\n" .
-    "<!-- Created with Iv-Alex Sitemap Generator 0.1 -->\n" .
-    "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n" .
-    "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" .
-    "        xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9\n" .
-    "        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n" .
-    "  <url>\n" .
-    "    <loc>" . htmlentities($start_url) . "</loc>\n" .
-    "    <changefreq>$freq</changefreq>\n" .
-    "    <priority>$priority</priority>\n" .
-    "  </url>\n");
-add_links_to_array($start_url, $start_url, $target);
-
-fwrite($target, "</urlset>\n");
-fclose($target);
