@@ -2,10 +2,11 @@
 error_reporting(E_ALL);
 header('Content-Type: text/html; charset=utf-8');
 
+$start_url = 'http://znanieetosila.ru/';       //uri для построения карты сайта
+$sitemap_limit = 200;                          //максимальное количество страниц для добавления в карту
+
 $base_url = $_SERVER['PHP_SELF'];              //script absolute URI
 $sitemap_file = './sitemap.xml';               //sitemap filename
-$start_url = 'http://znanieetosila.ru/';     //uri for sitemap
-$sitemap_limit = 30;                          //max count URLs in sitemap
 
 $freq = 'weekly';
 $priority = 1;
@@ -28,7 +29,7 @@ add_links_to_map($start_url, $start_url, $target, $priority, $freq, $sitemap_lim
 
 fwrite($target, "</urlset>\n");
 fclose($target);
-echo $urls_count;
+echo 'Карта сайта создана. Добавлено страниц: ' . $urls_count;
 
 //recursive site crawling
 function add_links_to_map($start_url, $url, &$file, $priority, $freq, $sitemap_limit, &$urls_count)
@@ -117,8 +118,6 @@ function get_link_data($url)
 //возвращает href всех элементов html
 function get_all_href($html)
 {
-    /*                $re = '~(?<prefix>(<a\s[^<>]*?\shref\s*=\s*[\'"])|(<a\s+href\s*=\s*[\'"]))(?<href>[^<>\'"]*?)(?<postfix>[\'"].*?>(.*?)</a>)~mi';
-*/
     $re = '~((<a\s[^<>]*?\shref\s*=\s*[\'"])|(<a\s+href\s*=\s*[\'"]))(?<href>[^<>\'"]*?)([\'"].*?>(.*?)</a>)~mi';
     preg_match_all($re, $html, $matches, PREG_SET_ORDER);
     $links = array();
@@ -135,7 +134,15 @@ function rel2abs($rel, $base)
     /* return if already absolute URL */
     if (parse_url($rel, PHP_URL_SCHEME) != '') return $rel;
     /* queries and anchors */
-    if ($rel[0] == '#' || $rel[0] == '?') return $base . $rel;
+    //$rel = ($pos = strpos($rel, '#')) ? substr($rel, 0, $pos) : $rel;
+    if ($rel[0] == '?') return $base . $rel;
+    $pos = strpos($rel, '#');
+    if ($pos === 0) {
+        return $base;
+    } elseif ($pos >0) {
+        $rel = substr($rel, 0, $pos);
+    }
+
     /* parse base URL and convert to local variables:
        $scheme, $host, $path */
     extract(parse_url($base));
@@ -158,3 +165,16 @@ function get_title($str)
     $title = preg_match("~<title>(.*?)</title>~iu", $str, $out) ? $out[1] : '';
     return $title;
 }
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта сайта</title>
+</head>
+<body>
+    
+</body>
+</html>
