@@ -2,34 +2,38 @@
 error_reporting(E_ALL);
 header('Content-Type: text/html; charset=utf-8');
 
-$start_url = 'http://znanieetosila.ru/';       //uri для построения карты сайта
-$sitemap_limit = 200;                          //максимальное количество страниц для добавления в карту
+$base_url = $_SERVER['PHP_SELF'];               //script absolute URI
+$sitemap_file = './sitemap.xml';                //sitemap filename
 
-$base_url = $_SERVER['PHP_SELF'];              //script absolute URI
-$sitemap_file = './sitemap.xml';               //sitemap filename
+if (isset($_GET['submit'])) {
+    $start_url = $_GET['start_url'];            //uri для построения карты сайта
+    $sitemap_limit = $_GET['sitemap_limit'];    //максимальное количество страниц для добавления в карту
 
-$freq = 'weekly';
-$priority = 1;
+    $freq = 'weekly';
+    $priority = 1;
 
-$target = fopen($sitemap_file, "w");
-if (!$target) {
-    //    echo "Cannot create $$sitemap_file!" . NL;
-    return;
+    $target = fopen($sitemap_file, "w");
+    if (!$target) {
+        //    echo "Cannot create $$sitemap_file!" . NL;
+        return;
+    }
+
+    fwrite($target, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" .
+        "<?xml-stylesheet type=\"text/xsl\" href=\"\"?>\n" .
+        "<!-- Created with Iv-Alex Sitemap Generator 0.1 -->\n" .
+        "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n" .
+        "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" .
+        "        xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9\n" .
+        "        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n");
+    $urls_count = 0;
+    add_links_to_map($start_url, $start_url, $target, $priority, $freq, $sitemap_limit, $urls_count);
+
+    fwrite($target, "</urlset>\n");
+    fclose($target);
+    header("Location: $base_url?urls_count=$urls_count");
+} elseif (isset($_GET['urls_count'])) {
+    $urls_count = $_GET['urls_count'];
 }
-
-fwrite($target, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" .
-    "<?xml-stylesheet type=\"text/xsl\" href=\"\"?>\n" .
-    "<!-- Created with Iv-Alex Sitemap Generator 0.1 -->\n" .
-    "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n" .
-    "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" .
-    "        xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9\n" .
-    "        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n");
-$urls_count = 0;
-add_links_to_map($start_url, $start_url, $target, $priority, $freq, $sitemap_limit, $urls_count);
-
-fwrite($target, "</urlset>\n");
-fclose($target);
-echo 'Карта сайта создана. Добавлено страниц: ' . $urls_count;
 
 //recursive site crawling
 function add_links_to_map($start_url, $url, &$file, $priority, $freq, $sitemap_limit, &$urls_count)
@@ -139,7 +143,7 @@ function rel2abs($rel, $base)
     $pos = strpos($rel, '#');
     if ($pos === 0) {
         return $base;
-    } elseif ($pos >0) {
+    } elseif ($pos > 0) {
         $rel = substr($rel, 0, $pos);
     }
 
@@ -169,12 +173,42 @@ function get_title($str)
 
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Карта сайта</title>
 </head>
+<style>
+    .caption {
+        margin: 1em 0;
+    }
+
+    label.block {
+        display: block;
+        margin-bottom: 0.5em;
+    }
+</style>
+
 <body>
-    
+    <?php
+    if (isset($urls_count)) {
+    ?>
+        <div class="caption">
+            Карта сайта создана. Добавлено страниц: <?= $urls_count ?>
+        </div>
+    <?php } ?>
+    <form action="" method="get">
+        <label class="block">
+            Введите адрес сайта с указанием протокола<br>
+            <input type="text" name="start_url" id="start-url" value="https://znanieetosila.ru/">
+        </label>
+        <label class="block">
+            Введите максимальное количество страниц для добавления в карту<br>
+            <input type="number" name="sitemap_limit" id="sitemap-limit" value="200">
+        </label>
+        <input type="submit" name="submit">
+    </form>
 </body>
+
 </html>
