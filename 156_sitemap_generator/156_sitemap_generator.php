@@ -5,7 +5,9 @@ header('Content-Type: text/html; charset=utf-8');
 $base_url = $_SERVER['PHP_SELF'];               //script absolute URI
 $sitemap_file = './sitemap.xml';                //sitemap filename
 
-if (isset($_GET['submit'])) {
+
+if (isset($_GET['start_url'])) {
+
     $start_url = $_GET['start_url'];            //uri для построения карты сайта
     $sitemap_limit = $_GET['sitemap_limit'];    //максимальное количество страниц для добавления в карту
 
@@ -30,8 +32,9 @@ if (isset($_GET['submit'])) {
 
     fwrite($target, "</urlset>\n");
     fclose($target);
-    header("Location: $base_url?urls_count=$urls_count");
+    echo $sitemap_file;
 } elseif (isset($_GET['urls_count'])) {
+    $script_way = 'progress';
     $urls_count = $_GET['urls_count'];
 }
 
@@ -169,46 +172,3 @@ function get_title($str)
     $title = preg_match("~<title>(.*?)</title>~iu", $str, $out) ? $out[1] : '';
     return $title;
 }
-?>
-
-<!DOCTYPE html>
-<html lang="ru">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Карта сайта</title>
-</head>
-<style>
-    .caption {
-        margin: 1em 0;
-    }
-
-    label.block {
-        display: block;
-        margin-bottom: 0.5em;
-    }
-</style>
-
-<body>
-    <?php
-    if (isset($urls_count)) {
-    ?>
-        <div class="caption">
-            Карта сайта создана. Добавлено страниц: <?= $urls_count ?>
-        </div>
-    <?php } ?>
-    <form action="" method="get">
-        <label class="block">
-            Введите адрес сайта с указанием протокола<br>
-            <input type="text" name="start_url" id="start-url" value="https://znanieetosila.ru/">
-        </label>
-        <label class="block">
-            Введите максимальное количество страниц для добавления в карту<br>
-            <input type="number" name="sitemap_limit" id="sitemap-limit" value="200">
-        </label>
-        <input type="submit" name="submit">
-    </form>
-</body>
-
-</html>

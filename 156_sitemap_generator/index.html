@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта сайта</title>
+</head>
+<style>
+    .information {
+        margin: 1em 0;
+    }
+
+    label.block {
+        display: block;
+        margin-bottom: 0.5em;
+    }
+</style>
+
+<body>
+    <div class="information">
+        <span id="caption">Ожидание отправки данных.</span>
+        <span id="progress"></span>
+        <span id="download"></span>
+    </div>
+    <!--    <form action="" method="get">
+-->
+    <label class="block">
+        Введите адрес сайта с указанием протокола<br>
+        <input type="text" name="start_url" id="start-url" value="https://znanieetosila.ru/">
+    </label>
+    <label class="block">
+        Введите максимальное количество страниц для добавления в карту<br>
+        <input type="number" name="sitemap_limit" id="sitemap-limit" value="200">
+    </label>
+    <input type="submit" name="submit" id="submit">
+    <!--    </form>
+-->
+
+    <script>
+        //после загрузки DOM-дерева страницы
+        document.addEventListener("DOMContentLoaded", function () {
+            //получить кнопку
+            var submitButton = document.getElementById('submit');
+            //подписаться на событие click по кнопке и назначить обработчик, который будет выполнять действия, указанные в безымянной функции
+            submitButton.addEventListener("click", function () {
+                var myCaption = document.getElementById('caption');
+                myCaption.innerHTML = 'Идет создание карты сайта. Обработано страниц: ';
+                var progress = document.getElementById('progress');
+                progress.innerHTML = '0 (0%)';
+                var downloadLink = document.getElementById('download');
+                downloadLink.innerHTML = '';
+
+                //1. Сбор данных, необходимых для выполнения запроса на сервере
+                var startUrl = document.getElementById('start-url').value;
+                var sitemapLimit = document.getElementById('sitemap-limit').value;
+                //Подготовка данных для отправки на сервер
+                //т.е. кодирование с помощью метода encodeURIComponent
+                startUrl = 'start_url=' + encodeURIComponent(startUrl);
+                sitemapLimit = 'sitemap_limit=' + encodeURIComponent(sitemapLimit);
+                // 2. Создание переменной request
+                var request = new XMLHttpRequest();
+                // 3. Настройка запроса
+                request.open('GET', '156_sitemap_generator.php?' + startUrl + '&' + sitemapLimit, true);
+                // 4. Подписка на событие onreadystatechange и обработка его с помощью анонимной функции
+                request.addEventListener('readystatechange', function () {
+                    //если запрос пришёл и статус запроса 200 (OK)
+                    if ((request.readyState == 4) && (request.status == 200)) {
+                        // например, выведем объект XHR в консоль браузера
+                        console.log(request);
+                        // и ответ (текст), пришедший с сервера в окне alert
+                        console.log(request.responseText);
+                        // заменить содержимое элемента ответом, пришедшим с сервера
+                        myCaption.innerHTML = 'Карта сайта создана. Обработано страниц: ';
+                        downloadLink.innerHTML = '<a href="' + request.responseText + '" download>Скачать</a>';
+                    }
+                });
+                // Устанавливаем заголовок Content-Type(обязательно для метода POST). Он предназначен для указания кодировки, с помощью которой зашифрован запрос. Это необходимо для того, чтобы сервер знал как его раскодировать.
+                request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                // 5. Отправка запроса на сервер. В качестве параметра указываем данные, которые необходимо передать (необходимо для POST)
+                request.send();
+            });
+        });
+    </script>
+</body>
+
+</html>
