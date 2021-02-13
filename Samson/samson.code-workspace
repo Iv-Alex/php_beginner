@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "uri": "ftp://vanomi_samson:Sa12Ms34On-@vanomi.beget.tech/",
+            "name": "Samson_Bitrix"
+        }
+    ],
+    "workbench.colorTheme": "Monokai Dimmed",
+    "files.associations": {
+        "*.tpl": "html"
+    },
+    "editor.renderWhitespace": "all",
+    "python.languageServer": "Pylance",
+    "php.validate.executablePath": "",
+    "settings": {
+        "editor.formatOnSave": true,
+        "php.validate.enable": false,
+        "phpfmt.cakephp": true,
+        "phpfmt.detect_indent": true,
+        "intelephense.phpdoc.returnVoid": false,
+    }
+}

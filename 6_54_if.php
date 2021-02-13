@@ -12,5 +12,3 @@ if ($a < 4) {
     $assessment = 'Хорошо';
 }
 echo 'Оценка по числу: ' . $assessment . '<br>';
-
-?>

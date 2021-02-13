@@ -6,7 +6,10 @@ $base_url = $_SERVER['PHP_SELF'];               //script absolute URI
 $sitemap_file = './sitemap.xml';                //sitemap filename
 
 
-if (isset($_GET['start_url'])) {
+if (isset($_GET['session_id'])) {
+
+    //файл для обмена данными с другими скриптами
+    $session_file = $_GET['session_id'];
 
     $start_url = $_GET['start_url'];            //uri для построения карты сайта
     $sitemap_limit = $_GET['sitemap_limit'];    //максимальное количество страниц для добавления в карту
@@ -27,23 +30,29 @@ if (isset($_GET['start_url'])) {
         "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" .
         "        xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9\n" .
         "        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n");
-    $urls_count = 0;
-    add_links_to_map($start_url, $start_url, $target, $priority, $freq, $sitemap_limit, $urls_count);
+
+    add_links_to_map($start_url, $start_url, $target, $priority, $freq, $sitemap_limit, $session_file);
 
     fwrite($target, "</urlset>\n");
     fclose($target);
     echo $sitemap_file;
-} elseif (isset($_GET['urls_count'])) {
-    $script_way = 'progress';
-    $urls_count = $_GET['urls_count'];
+    if (file_exists($session_file)) unlink($session_file);
 }
 
 //recursive site crawling
-function add_links_to_map($start_url, $url, &$file, $priority, $freq, $sitemap_limit, &$urls_count)
+function add_links_to_map($start_url, $url, &$file, $priority, $freq, $sitemap_limit, $session_file)
 {
     //массив проверенных ссылок
-    static $seen_links;
-    if (empty($seen_links)) $seen_links = array();
+    static $seen_links, $urls_count, $links_to_see_count, $seen_links_count;
+    if (empty($seen_links)) {
+        $urls_count = 0;
+        $links_to_see_count = 1;
+        $seen_links_count = 0;
+        $seen_links = array();
+    }
+    //текущий прогресс создания карты
+    file_put_contents($session_file, $seen_links_count . ',' . $links_to_see_count);
+    $seen_links_count++;
 
     //применим к URI очищающий фильтр
     $url = filter_var($url, FILTER_SANITIZE_URL);
@@ -79,12 +88,14 @@ function add_links_to_map($start_url, $url, &$file, $priority, $freq, $sitemap_l
                 $links = get_all_href($link_data['html_data']);
                 unset($link_data);
                 $links = array_unique($links);
+                //текущий прогресс создания карты
+                $links_to_see_count += count($links);
 
                 foreach ($links as $link) {
                     if (strlen($link) > 0) {
                         $href = rel2abs($link, $url);
                         if ($urls_count < $sitemap_limit)
-                            add_links_to_map($start_url, $href, $file, $priority, $freq, $sitemap_limit, $urls_count);
+                            add_links_to_map($start_url, $href, $file, $priority, $freq, $sitemap_limit, $session_file);
                     }
                 }
             } else {
