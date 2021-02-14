@@ -8,12 +8,12 @@
 // TODO .gif
 // TODO SEF mode
 // TODO cache
-// TODO param add count of lines in SELECT
+// TODO param add count of lines in PRESELECT for scrolling (overflow)
 // TODO param add timeout for ajax start (script.js)
+// TODO add price and summ
+// TODO vue elements adding
 
 if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) die();
-
-define('SMSN_PRESELECT_LIST_SIZE', '5');
 
 $arResult['DATE'] = '';
 
@@ -25,38 +25,26 @@ if (CModule::IncludeModule("iblock")) {
 
 ?>
 	<div id="smsn-form-multiple-goods">
-		<input type="text" id="smsn-xmlid" class="form-control col-2">
-		<button type="button" id="smsn-btn-search" class="btn btn-primary">Проверить</button>
-		<div id="smsn-preselect-list-container">
-			<select id="smsn-preselect-list" class="custom-select" size="<?= SMSN_PRESELECT_LIST_SIZE ?>">
-				<option class="is" selected>Open this select menu</option>
-				<option class="is" value="1">One</option>
-				<option class="is" value="2">Two</option>
-				<option class="is" value="3">Three</option>
-			</select>
+		<div class="form-row align-items-center">
+			<div class="col">
+				<input type="text" id="smsn-input-xmlid" class="form-control" placeholder="<?= GetMessage("SMSN_XML_ID_INPUT_PLACEHOLDER") ?>">
+			</div>
+			<div class="col">
+				<button type="button" id="smsn-btn-add-goods-to-cart" class="btn btn-primary"><?= GetMessage("SMSN_ADD_TO_CART") ?></button>
+			</div>
 		</div>
+		<div class="form-check">
+			<input class="form-check-input" type="checkbox" id="smsn-chbox-xmlid-clear">
+			<label class="form-check-label" for="smsn-chbox-xmlid-clear">
+				<?= GetMessage("SMSN_XML_ID_INPUT_CLEAR_CAPTION") ?>
+			</label>
+		</div>
+		<div id="smsn-preselect-list" class="list-group"></div>
+		<div id="smsn-goods-for-adding"></div>
 	</div>
 
-
 <?php
-	$arResult['DATE'] = 'Ok';
 
-	//    $IBLOCK_ID = 5;
-	//  $arFilter = array("IBLOCK_ID" => $IBLOCK_ID, "ACTIVE" => "Y");
-	$arFilter = array("XML_ID" => "26%", "ACTIVE" => "Y");
-	$arSelect = array('ID', 'XML_ID', 'NAME');
-	$my_elements = CIBlockElement::GetList(
-		array("ID" => "ASC"),
-		$arFilter,
-		false,
-		false,
-		$arSelect
-	);
-
-	while ($ar_fields = $my_elements->GetNext()) {
-		$arResult['DATE'] .= $ar_fields['ID'] . " " . $ar_fields['XML_ID'] . " " . $ar_fields['NAME'] . "<br>";
-		//$arResult['DATE'] .= '0';
-	}
 };
 
 $this->IncludeComponentTemplate();
