@@ -19,28 +19,46 @@ $arResult['DATE'] = '';
 
 // Компонент отработает только при успешном подключении модуля Инфоблоков
 if (CModule::IncludeModule("iblock")) {
-	// Выводим кнопку вызова формы подбора товаров
-
-	// Блок формы подбора товаров
-
 ?>
-	<div id="smsn-form-multiple-goods">
-		<div class="form-row align-items-center">
-			<div class="col">
-				<input type="text" id="smsn-input-xmlid" class="form-control" placeholder="<?= GetMessage("SMSN_XML_ID_INPUT_PLACEHOLDER") ?>">
-			</div>
-			<div class="col">
-				<button type="button" id="smsn-btn-add-goods-to-cart" class="btn btn-primary"><?= GetMessage("SMSN_ADD_TO_CART") ?></button>
+	<!-- Button trigger MultipleAddingToCart modal form -->
+	<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#smsn-form-multiple-goods">
+		GO
+	</button>
+	<!-- MultipleAddingToCart modal form -->
+	<div id="smsn-form-multiple-goods" class="modal fade" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div>
+						<div class="form-row align-items-center">
+							<input type="text" id="smsn-input-xmlid" class="form-control" placeholder="<?= GetMessage("SMSN_XML_ID_INPUT_PLACEHOLDER") ?>">
+						</div>
+						<div class="form-check">
+							<input class="form-check-input" type="checkbox" id="smsn-chbox-xmlid-clear" checked>
+							<label class="form-check-label" for="smsn-chbox-xmlid-clear">
+								<?= GetMessage("SMSN_XML_ID_INPUT_CLEAR_CAPTION") ?>
+							</label>
+						</div>
+						<div class="form-row align-items-left">
+							<div class="col-3"></div>
+							<div id="smsn-preselect-list-anchor" class="col"></div>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div>
+					<div class="modal-body">
+						<div id="smsn-goods-for-adding"></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" id="smsn-btn-add-goods-to-cart" class="btn btn-primary"><?= GetMessage("SMSN_ADD_TO_CART") ?></button>
+					</div>
+				</div>
+				<div id="smsn-preselect-list"></div>
 			</div>
 		</div>
-		<div class="form-check">
-			<input class="form-check-input" type="checkbox" id="smsn-chbox-xmlid-clear">
-			<label class="form-check-label" for="smsn-chbox-xmlid-clear">
-				<?= GetMessage("SMSN_XML_ID_INPUT_CLEAR_CAPTION") ?>
-			</label>
-		</div>
-		<div id="smsn-preselect-list" class="list-group"></div>
-		<div id="smsn-goods-for-adding"></div>
 	</div>
 
 <?php

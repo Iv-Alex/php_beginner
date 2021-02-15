@@ -1,27 +1,31 @@
 
 "use strict";
 
-/*
-* BX.bind(document, "keypress", SendError);
-*/
-
 var minSearchLetters = 2;
 
 // set event handlers after full load DOM elements
 $(document).ready(function () {
-	//
+
+	// XML-ID seek results PopUp form position set
+	$('#smsn-form-multiple-goods').on('focus', function (event) {
+		fnSetPositionPopUpForm('#smsn-preselect-list');
+		//event.preventDefault();
+	});
+
+	//show XML-ID seek results
 	$('#smsn-input-xmlid').on('change keyup', function (event) {
 		fillGoodsList($('#smsn-input-xmlid').val(), '#smsn-preselect-list', 'smsn-preselect-item');
 		//event.preventDefault();
 	});
 
+	// put goods list to a Cart
 	$('#smsn-btn-add-goods-to-cart').on('click', function (event) {
 		addGoodsToCart('#smsn-goods-for-adding', 'smsn-adding-item');
 		event.preventDefault();
 	});
 
-	// set event handler for 
-	$(document).on('dblclick', '.smsn-preselect-item', function (event) {
+	// add item to goods list for adding to a Cart
+	$(document).on('click', '.smsn-preselect-item', function (event) {
 		addGoodsForAddingItem('#smsn-goods-for-adding', this, 'smsn-adding-item');
 		if ($('#smsn-chbox-xmlid-clear').is(':checked')) {
 			$('#smsn-input-xmlid').val('');
@@ -29,6 +33,13 @@ $(document).ready(function () {
 		}
 		//event.preventDefault();
 	});
+
+	// delete item to goods list for adding to a Cart
+	$(document).on('click', '.smsn-delete-item', function (event) {
+		deleteGoodsFromAddingItem('#smsn-goods-for-adding', this);
+		event.preventDefault();
+	});
+
 
 });
 
@@ -63,6 +74,21 @@ function fillGoodsList(xmlId, groupId, itemClass) {
 };
 
 /**
+ * function set PopUpForm position relatively anchor
+ * anchor is the eltment which have an ID {PopUpForm_ID}+'-anchor'
+ * @param formId string PopUpForm ID
+ * @returns undefined;
+ */
+function fnSetPositionPopUpForm(formId) {
+	var obj = $(formId);
+	var anchor = $(formId + '-anchor');
+	obj.css('position', 'fixed');
+	obj.offset({ top: 0, left: 0 });
+	obj.offset(anchor.offset());
+}
+
+
+/**
  * function fills the items conteiner by arGoods records
  * @param arGoods array of catalog items as array(ID, XML_ID, NAME)
  * @param groupId string items container css selector
@@ -83,24 +109,27 @@ function fnCreateHtmlList(groupId, arGoods, itemClass) {
 
 /**
  * function moves a goods item from the preselect group to the adding group
- * @param itemHtml item from preselect list
  * @param groupId string items container ID
+ * @param item item from preselect list
  * @param itemClass string new items class name
  * @returns undefined
  */
 function addGoodsForAddingItem(groupId, item, itemClass) {
-	var exists = $(groupId).find(`[data-item-id="${item.dataset.itemId}"]`);
+	var itemId = item.dataset.itemId;
+	var exists = $(groupId).find(`[data-item-id="${itemId}"]`);
 	if (exists.length) {
 		let quantity = exists.find('.smsn-quantity');
 		quantity.val(parseInt(quantity.val()) + 1);
 	} else {
-		let itemHtml = `<div class="${itemClass} input-group" data-item-id="${item.dataset.itemId}">`
+		let itemHtml = `<div class="${itemClass} input-group" data-item-id="${itemId}">`
 			+ `<div class="input-group-prepend">`
 			+ `<span class="input-group-text">${$(item).children('strong').html()}</span>`
 			+ `</div>`
 			+ `<div class="form-control">${$(item).children('span').html()}</div>`
 			+ `<input type="number" value="1" class="smsn-quantity form-control col-3">`
-			+ `<div class="input-group-append"><span class="input-group-text">X</span></div>`
+			+ `<div class="input-group-append">`
+			+ `<span class="btn input-group-text btn-outline-danger smsn-delete-item" data-parent-item-id="${itemId}">X</span>`
+			+ `</div>`
 			+ `</div>`;
 		$(groupId).prepend(itemHtml);
 	}
@@ -120,22 +149,28 @@ function addGoodsToCart(groupId, itemClass) {
 		item.quantity = parseInt($(this).find('.smsn-quantity').val());
 		arGoods.push(item);
 	});
-
 	console.log(arGoods);
-
 	BX.ajax.runComponentAction('samson:goods.adding.cart', 'addGoodsToCart', {
 		mode: 'ajax',
 		data: {
 			arGoods: arGoods
 		}
 	}).then(function (response) {
-
-		console.log(response);
-
 		if (response['errors'].length == 0) {
 			// TODO how mach goods added
 
 		}
 	});
 	BX.onCustomEvent('OnBasketChange');
+}
+
+/**
+ * function removes a goods item from the adding group
+ * @param groupId string items container ID
+ * @param item event sender has information about item ID to remove from the list
+ * @returns undefined
+ */
+function deleteGoodsFromAddingItem(groupId, item) {
+	var itemId = item.dataset.parentItemId;
+	$(groupId).find(`[data-item-id="${itemId}"]`).remove();
 }
